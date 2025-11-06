@@ -8,6 +8,8 @@ import { appendCosmosLog, fetchByEAN, searchProducts } from '../services/cosmos'
 import { fetchNCM } from '../services/ncm'
 import { FileText, Copy, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 function cleanDigits(input: string) {
   return input.replace(/\D/g, '')
@@ -214,60 +216,90 @@ export default function CosmosLookup() {
       {results && (
         <Stack spacing={2}>
           {results.byName && (
-            <Paper sx={{ p: 3 }}>
-              <Stack spacing={2}>
-                <Typography variant="subtitle1" fontWeight={700}>Resultado por Nome</Typography>
-                <Divider />
-                <Box>
-                  <Typography variant="body2" color="text.secondary">JSON bruto (temporário):</Typography>
-                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, background: 'rgba(0,0,0,0.03)', padding: 12, borderRadius: 8 }}>{JSON.stringify(results.byName, null, 2)}</pre>
+            <Card>
+              <CardHeader>
+                <CardTitle>Resultado por Nome</CardTitle>
+                <CardDescription>
+                  {`Encontrados ${results.byName.products?.length || 0} produtos para "${nameQuery}"`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 2, alignItems: 'stretch' }}>
+                  {results.byName.products?.map((p: any, idx: number) => (
+                      <Card key={idx} className="flex flex-col h-full">
+                        <img
+                          src={p.thumbnail || 'https://via.placeholder.com/280x192'}
+                          alt={p.description}
+                          className="w-full h-48 object-cover rounded-t-lg"
+                        />
+                        <div className="p-4 flex flex-col flex-grow">
+                          <h3 className="text-lg font-semibold min-h-16 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.description}</h3>
+                          <div className="mt-auto">
+                              <p className="text-sm text-gray-600"><span className="font-bold">GTIN:</span> {p.gtin}</p>
+                              {p.ncm && <p className="text-sm text-gray-600"><span className="font-bold">NCM:</span> {p.ncm.code}</p>}
+                          </div>
+                        </div>
+                    </Card>
+                  ))}
                 </Box>
-              </Stack>
-            </Paper>
+              </CardContent>
+            </Card>
           )}
 
           {results.byEAN && (
-            <Paper sx={{ p: 3 }}>
-              <Stack spacing={2}>
-                <Typography variant="subtitle1" fontWeight={700}>Resultado por EAN/GTIN</Typography>
-                <Divider />
-                <Box>
-                  <Typography variant="body2" color="text.secondary">JSON bruto (temporário):</Typography>
-                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, background: 'rgba(0,0,0,0.03)', padding: 12, borderRadius: 8 }}>{JSON.stringify(results.byEAN, null, 2)}</pre>
-                </Box>
-              </Stack>
-            </Paper>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Resultado por EAN/GTIN</CardTitle>
+                    <CardDescription>{results.byEAN.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Stack spacing={1}>
+                        <div><Typography component="span" fontWeight="bold">GTIN:</Typography> {results.byEAN.gtin}</div>
+                        {results.byEAN.ncm && <div><Typography component="span" fontWeight="bold">NCM:</Typography> {results.byEAN.ncm.code} - {results.byEAN.ncm.description}</div>}
+                        {results.byEAN.gpc && <div><Typography component="span" fontWeight="bold">GPC:</Typography> {results.byEAN.gpc.code} - {results.byEAN.gpc.description}</div>}
+                        {results.byEAN.cest && <div><Typography component="span" fontWeight="bold">CEST:</Typography> {results.byEAN.cest.code} - {results.byEAN.cest.description}</div>}
+                        {results.byEAN.thumbnail && <img src={results.byEAN.thumbnail} alt={results.byEAN.description} style={{maxWidth: '150px', borderRadius: '8px', marginTop: '12px'}} />}
+                    </Stack>
+                </CardContent>
+                 <CardFooter>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Copy size={16} />}
+                            onClick={() => copyToClipboard(JSON.stringify(results.byEAN, null, 2))}
+                        >
+                            Copiar JSON
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<FileText size={16} />}
+                            onClick={() => exportJson(results.byEAN, `ean-${cleanDigits(eanQuery)}.json`)}
+                        >
+                            Exportar JSON
+                        </Button>
+                    </Stack>
+                </CardFooter>
+            </Card>
           )}
 
           {results.byNCM && (
-            <MotionPaper sx={{ p: 0, overflow: 'hidden', borderRadius: 2, bgcolor: 'background.paper' }}
-              variants={fadeSlideUp}
-              initial="initial"
-              animate="animate"
-            >
-              <Box sx={{ p: 2, bgcolor: 'rgba(25,118,210,0.08)', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <FileText size={18} />
-                  <Typography variant="subtitle1" fontWeight={700}>Resultado por NCM</Typography>
-                  <Chip label="NCM" size="small" sx={{ ml: 'auto' }} />
-                </Stack>
-              </Box>
-              <Box sx={{ p: 3 }}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Resultado por NCM</CardTitle>
+                <CardDescription>
+                  {(() => {
+                    const info = extractNcmInfo(results.byNCM)
+                    return info.code ? `NCM ${info.code} - ${info.description}` : 'Código NCM'
+                  })()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 {(() => {
                   const { total } = getNcmSummary(results.byNCM)
                   const info = extractNcmInfo(results.byNCM)
                   const produtos = extractProducts(results.byNCM)
                   return (
                     <Stack spacing={2}>
-                      {/* Cabeçalho com código e descrição do NCM */}
-                      <Stack spacing={0.5}>
-                        <Typography variant="h6" sx={{ color: 'text.primary' }}>
-                          {info.code ? `NCM ${info.code}` : 'Código NCM'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>{info.description}</Typography>
-                      </Stack>
-                      
-                      {/* Metadados de classificação (se existirem) */}
                       <Stack direction="row" spacing={1} flexWrap="wrap">
                         {info.chapter && <Chip label={`Capítulo: ${info.chapter}`} size="small" />}
                         {info.position && <Chip label={`Posição: ${info.position}`} size="small" />}
@@ -275,60 +307,55 @@ export default function CosmosLookup() {
                         {info.category && <Chip label={`Categoria: ${info.category}`} size="small" />}
                         <Chip label={`Total de itens: ${total}`} color="primary" variant="outlined" size="small" />
                       </Stack>
-                      
-                      {/* Grid com primeiros produtos relacionados e campos principais */}
+
                       {Array.isArray(produtos) && produtos.length > 0 && (
-                        <Stack spacing={1} component={motion.div} variants={listParent} initial="initial" animate="animate">
-                          {produtos.slice(0, 6).map((p: any, idx: number) => {
-                            const title = p?.name || p?.description || p?.title || 'Produto'
-                            const brand = p?.brand || p?.brands || p?.manufacturer || null
-                            const gtins = getGtins(p)
-                            return (
-                              <MotionPaper key={idx} sx={{ p: 1.5, borderRadius: 1.5 }} variants={listItem}>
-                                <Stack spacing={0.5}>
-                                  <Stack direction="row" spacing={1} alignItems="center">
-                                    <ArrowRight size={16} />
-                                    <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>{title}</Typography>
-                                  </Stack>
-                                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ pl: 2 }}>
-                                    {brand && <Chip label={String(brand)} size="small" variant="outlined" />}
-                                    {gtins.slice(0, 2).map((g, i) => (
-                                      <Chip key={i} label={`GTIN: ${g}`} size="small" />
-                                    ))}
-                                  </Stack>
-                                </Stack>
-                              </MotionPaper>
-                            )}
-                          )}
-                        </Stack>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Produto</TableHead>
+                              <TableHead>Marca</TableHead>
+                              <TableHead>GTINs</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {produtos.slice(0, 6).map((p: any, idx: number) => {
+                              const title = p?.name || p?.description || p?.title || 'Produto'
+                              const brand = p?.brand || p?.brands || p?.manufacturer || null
+                              const gtins = getGtins(p)
+                              return (
+                                <TableRow key={idx}>
+                                  <TableCell>{title}</TableCell>
+                                  <TableCell>{brand}</TableCell>
+                                  <TableCell>{gtins.join(', ')}</TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
                       )}
-                      
-                      {/* Ações */}
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                        <MotionButton
-                          variant="outlined"
-                          startIcon={<Copy size={16} />}
-                          onClick={() => copyToClipboard(JSON.stringify(results.byNCM, null, 2))}
-                          whileHover={{ y: -1 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          Copiar JSON
-                        </MotionButton>
-                        <MotionButton
-                          variant="contained"
-                          startIcon={<FileText size={16} />}
-                          onClick={() => exportJson(results.byNCM, `ncm-${cleanDigits(ncmQuery)}.json`)}
-                          whileHover={{ y: -1 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          Exportar JSON
-                        </MotionButton>
-                      </Stack>
                     </Stack>
                   )
                 })()}
-              </Box>
-            </MotionPaper>
+              </CardContent>
+              <CardFooter>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Copy size={16} />}
+                    onClick={() => copyToClipboard(JSON.stringify(results.byNCM, null, 2))}
+                  >
+                    Copiar JSON
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<FileText size={16} />}
+                    onClick={() => exportJson(results.byNCM, `ncm-${cleanDigits(ncmQuery)}.json`)}
+                  >
+                    Exportar JSON
+                  </Button>
+                </Stack>
+              </CardFooter>
+            </Card>
           )}
         </Stack>
       )}

@@ -9,14 +9,14 @@ const port = 3001;
 app.use(cors());
 app.use(bodyParser.text({ type: 'application/xml' }));
 
-app.post('/generate-pdf', (req, res) => {
+app.post('/generate-pdf', async (req, res) => {
   try {
     const xmlContent = req.body;
     if (!xmlContent) {
       return res.status(400).send('Corpo da requisição está vazio.');
     }
 
-    const nfeData = generateNfeData(xmlContent);
+    const nfeData = await generateNfeData(xmlContent);
 
     if (nfeData) {
       res.json(nfeData);

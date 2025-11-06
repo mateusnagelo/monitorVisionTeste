@@ -1,127 +1,179 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Alert, Box, Chip, Grid, LinearProgress, Paper, Stack, Typography, Button } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import DownloadDoneIcon from '@mui/icons-material/DownloadDone'
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
-import BugReportIcon from '@mui/icons-material/BugReport'
-import AssessmentIcon from '@mui/icons-material/Assessment'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import FactCheckIcon from '@mui/icons-material/FactCheck'
+import { useEffect, useMemo, useState } from 'react';
+import { Box, Grid, LinearProgress, Stack, Typography, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const [downloads, setDownloads] = useState<any[]>([])
-  const [logs, setLogs] = useState<any[]>([])
-  const [validations, setValidations] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate();
+  const [downloads, setDownloads] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [validations, setValidations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     try {
-      const d = JSON.parse(localStorage.getItem('monitorVision.downloads') || '[]')
-      const l = JSON.parse(localStorage.getItem('monitorVision.logs') || '[]')
-      const v = JSON.parse(localStorage.getItem('monitorVision.xmlValidations') || '[]')
-      setDownloads(Array.isArray(d) ? d : [])
-      setLogs(Array.isArray(l) ? l : [])
-      setValidations(Array.isArray(v) ? v : [])
+      const d = JSON.parse(localStorage.getItem('monitorVision.downloads') || '[]');
+      const l = JSON.parse(localStorage.getItem('monitorVision.logs') || '[]');
+      const v = JSON.parse(localStorage.getItem('monitorVision.xmlValidations') || '[]');
+      setDownloads(Array.isArray(d) ? d : []);
+      setLogs(Array.isArray(l) ? l : []);
+      setValidations(Array.isArray(v) ? v : []);
     } catch {
-      setDownloads([])
-      setLogs([])
-      setValidations([])
+      setDownloads([]);
+      setLogs([]);
+      setValidations([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   const metrics = useMemo(() => {
-    const totalDownloads = downloads.length
-    const successfulDownloads = downloads.filter(d => d.success).length
-    const failedDownloads = totalDownloads - successfulDownloads
-    const lastDownload = downloads[downloads.length - 1] || null
+    const totalDownloads = downloads.length;
+    const successfulDownloads = downloads.filter(d => d.success).length;
+    const downloadSuccessRate = totalDownloads > 0 ? (successfulDownloads / totalDownloads) * 100 : 0;
+    const lastDownload = downloads[downloads.length - 1] || null;
 
-    const totalQueries = logs.length
-    const successfulQueries = logs.filter(l => l.success).length
-    const failedQueries = totalQueries - successfulQueries
-    const lastQuery = logs[logs.length - 1] || null
+    const totalQueries = logs.length;
+    const successfulQueries = logs.filter(l => l.success).length;
+    const querySuccessRate = totalQueries > 0 ? (successfulQueries / totalQueries) * 100 : 0;
+    const lastQuery = logs[logs.length - 1] || null;
 
-    const totalValidations = validations.length
-    const successfulValidations = validations.filter(v => v.success).length
-    const failedValidations = totalValidations - successfulValidations
-    const lastValidation = validations[validations.length - 1] || null
+    const totalValidations = validations.length;
+    const successfulValidations = validations.filter(v => v.success).length;
+    const validationSuccessRate = totalValidations > 0 ? (successfulValidations / totalValidations) * 100 : 0;
+    const lastValidation = validations[validations.length - 1] || null;
 
     return {
       totalDownloads,
-      successfulDownloads,
-      failedDownloads,
+      downloadSuccessRate,
       lastDownload,
       totalQueries,
-      successfulQueries,
-      failedQueries,
+      querySuccessRate,
       lastQuery,
       totalValidations,
-      successfulValidations,
-      failedValidations,
+      validationSuccessRate,
       lastValidation,
-    }
-  }, [downloads, logs, validations])
+    };
+  }, [downloads, logs, validations]);
+
+  if (loading) {
+    return (
+      <Stack spacing={2} alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
+        <LinearProgress sx={{ width: '50%' }} />
+        <Typography variant="body2" color="text.secondary">Carregando dados do Dashboard...</Typography>
+      </Stack>
+    );
+  }
 
   return (
-    <Stack spacing={2}>
-      <Paper sx={{ p: 2 }} variant="outlined">
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
-          <Typography variant="h6" fontWeight={700}>Dashboard</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Downloads: {metrics.totalDownloads} · Consultas: {metrics.totalQueries} · Validações: {metrics.totalValidations}
-          </Typography>
-        </Stack>
-      </Paper>
+    <Stack spacing={3}>
+      <Box>
+        <Typography variant="h4" fontWeight="bold" className="gradient-text">Dashboard de Atividades</Typography>
+        <Typography variant="body1" color="text.secondary">
+          Visão geral das operações recentes no sistema.
+        </Typography>
+      </Box>
 
-      {loading ? (
-        <Typography variant="body2" color="text.secondary">Carregando…</Typography>
-      ) : (
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2 }} variant="outlined">
-              <Typography variant="subtitle1" fontWeight={700}>Downloads IBPT</Typography>
-              <Typography variant="body2">Total: {metrics.totalDownloads}</Typography>
-              <Typography variant="body2">Sucesso: {metrics.successfulDownloads}</Typography>
-              <Typography variant="body2">Falha: {metrics.failedDownloads}</Typography>
-              <Typography variant="body2" color="text.secondary">Último: {metrics.lastDownload ? `${metrics.lastDownload?.filename ?? 'arquivo.csv'} (${new Date(metrics.lastDownload.timestamp).toLocaleString()})` : '—'}</Typography>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <Button size="small" onClick={() => navigate('/ibptax')}>IBPTax</Button>
-                <Button size="small" variant="outlined" onClick={() => navigate('/ibptax')}>Repetir</Button>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardHeader>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <CloudDownloadIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+                <Box>
+                  <CardTitle>Downloads IBPT</CardTitle>
+                  <CardDescription>Tabelas de impostos</CardDescription>
+                </Box>
               </Stack>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2 }} variant="outlined">
-              <Typography variant="subtitle1" fontWeight={700}>Consultas CNPJ</Typography>
-              <Typography variant="body2">Total: {metrics.totalQueries}</Typography>
-              <Typography variant="body2">Sucesso: {metrics.successfulQueries}</Typography>
-              <Typography variant="body2">Falha: {metrics.failedQueries}</Typography>
-              <Typography variant="body2" color="text.secondary">Última: {metrics.lastQuery ? `${metrics.lastQuery.cnpj} (${new Date(metrics.lastQuery.timestamp).toLocaleString()})` : '—'}</Typography>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <Button size="small" onClick={() => navigate('/clientes')}>Clientes</Button>
-                <Button size="small" variant="outlined" onClick={() => navigate('/cnpj')}>Nova consulta</Button>
-              </Stack>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2 }} variant="outlined">
-              <Typography variant="subtitle1" fontWeight={700}>Validações XML</Typography>
-              <Typography variant="body2">Total: {metrics.totalValidations}</Typography>
-              <Typography variant="body2">Sucesso: {metrics.successfulValidations}</Typography>
-              <Typography variant="body2">Falha: {metrics.failedValidations}</Typography>
-              <Typography variant="body2" color="text.secondary">Última: {metrics.lastValidation ? `${metrics.lastValidation?.filename ?? 'XML'} (${new Date(metrics.lastValidation.timestamp).toLocaleString()})` : '—'}</Typography>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <Button size="small" onClick={() => window.open('https://www.sefaz.rs.gov.br/nfe/nfe-val.aspx', '_blank')}>Sefaz RS</Button>
-                <Button size="small" variant="outlined" onClick={() => navigate('/xml')}>Validar XML</Button>
-              </Stack>
-            </Paper>
-          </Grid>
+            </CardHeader>
+            <CardContent>
+              <Typography variant="h3" fontWeight="bold">{metrics.totalDownloads}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>downloads totais</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ width: '100%', mr: 1 }}>
+                  <LinearProgress variant="determinate" value={metrics.downloadSuccessRate} sx={{ height: 8, borderRadius: 5 }} />
+                </Box>
+                <Box sx={{ minWidth: 35 }}>
+                  <Typography variant="body2" color="text.secondary">{`${Math.round(metrics.downloadSuccessRate)}%`}</Typography>
+                </Box>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                Último: {metrics.lastDownload ? `${metrics.lastDownload?.filename ?? 'arquivo.csv'} (${new Date(metrics.lastDownload.timestamp).toLocaleDateString()})` : 'N/A'}
+              </Typography>
+            </CardContent>
+            <CardFooter>
+              <Button fullWidth variant="contained" onClick={() => navigate('/ibptax')}>Ver Detalhes</Button>
+            </CardFooter>
+          </Card>
         </Grid>
-      )}
+
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardHeader>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <BugReportIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+                <Box>
+                  <CardTitle>Consultas CNPJ</CardTitle>
+                  <CardDescription>Buscas de clientes</CardDescription>
+                </Box>
+              </Stack>
+            </CardHeader>
+            <CardContent>
+              <Typography variant="h3" fontWeight="bold">{metrics.totalQueries}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>consultas totais</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ width: '100%', mr: 1 }}>
+                  <LinearProgress variant="determinate" value={metrics.querySuccessRate} sx={{ height: 8, borderRadius: 5 }} />
+                </Box>
+                <Box sx={{ minWidth: 35 }}>
+                  <Typography variant="body2" color="text.secondary">{`${Math.round(metrics.querySuccessRate)}%`}</Typography>
+                </Box>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                Última: {metrics.lastQuery ? `${metrics.lastQuery.cnpj} (${new Date(metrics.lastQuery.timestamp).toLocaleDateString()})` : 'N/A'}
+              </Typography>
+            </CardContent>
+            <CardFooter>
+              <Button fullWidth variant="contained" onClick={() => navigate('/cnpj')}>Nova Consulta</Button>
+            </CardFooter>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardHeader>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <FactCheckIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+                <Box>
+                  <CardTitle>Validações XML</CardTitle>
+                  <CardDescription>Verificação de NF-e</CardDescription>
+                </Box>
+              </Stack>
+            </CardHeader>
+            <CardContent>
+              <Typography variant="h3" fontWeight="bold">{metrics.totalValidations}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>validações totais</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ width: '100%', mr: 1 }}>
+                  <LinearProgress variant="determinate" value={metrics.validationSuccessRate} sx={{ height: 8, borderRadius: 5 }} />
+                </Box>
+                <Box sx={{ minWidth: 35 }}>
+                  <Typography variant="body2" color="text.secondary">{`${Math.round(metrics.validationSuccessRate)}%`}</Typography>
+                </Box>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                Última: {metrics.lastValidation ? `${metrics.lastValidation?.filename ?? 'XML'} (${new Date(metrics.lastValidation.timestamp).toLocaleDateString()})` : 'N/A'}
+              </Typography>
+            </CardContent>
+            <CardFooter>
+              <Button fullWidth variant="contained" onClick={() => navigate('/xml')}>Validar XML</Button>
+            </CardFooter>
+          </Card>
+        </Grid>
+      </Grid>
     </Stack>
-  )
+  );
 }
