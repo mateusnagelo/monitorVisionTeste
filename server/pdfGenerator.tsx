@@ -213,4 +213,4 @@ const generateNfeData = async (xmlString: string) => {
   }
 };
 
-module.exports = { generateNfeData };
+export { generateNfeData };

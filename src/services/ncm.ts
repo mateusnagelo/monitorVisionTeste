@@ -28,15 +28,12 @@ export async function fetchNCM(baseUrl: string, token: string, code: string) {
 
   for (const path of endpoints) {
     try {
-      if (import.meta.env.DEV) console.log(`[NCM] tentando: ${path}`)
       const res = await axios.get(path, axiosCfg)
-      if (import.meta.env.DEV) console.log(`[NCM] sucesso: ${path}`)
       return res.data as NCMResponse
     } catch (err: any) {
       lastError = err
       if (err?.response) {
         const status = err.response.status
-        if (import.meta.env.DEV) console.warn(`[NCM] falha (${status}) em: ${path}`)
         // Se for 404, tenta próximo endpoint
         if (status === 404) continue
         if (status === 401) throw new Error('Autenticação requerida ou token inválido (401)')

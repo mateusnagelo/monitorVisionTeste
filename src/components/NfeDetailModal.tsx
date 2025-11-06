@@ -12,20 +12,28 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ isOpen, onClose, nfe })
     return null;
   }
 
+  const formatCurrency = (value: string | number | undefined) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (numValue === undefined || isNaN(numValue)) {
+      return 'N/A';
+    }
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="my-modal">
       <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
         <div className="mt-3 text-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Detalhes da NFe: {nfe.ide.nNF}</h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">Detalhes da NFe: {nfe.number}</h3>
           <div className="mt-2 px-7 py-3">
             <div className="text-left">
-              <p><strong>Chave:</strong> {nfe.chave}</p>
-              <p><strong>Emitente:</strong> {nfe.emit.xNome}</p>
-              <p><strong>CNPJ Emitente:</strong> {nfe.emit.CNPJ}</p>
-              <p><strong>Destinatário:</strong> {nfe.dest.xNome}</p>
-              <p><strong>CNPJ Destinatário:</strong> {nfe.dest.CNPJ}</p>
-              <p><strong>Emissão:</strong> {new Date(nfe.ide.dhEmi).toLocaleString()}</p>
-              <p><strong>Valor Total:</strong> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(nfe.total.ICMSTot.vNF)}</p>
+              <p><strong>Chave:</strong> {nfe.key}</p>
+              <p><strong>Emitente:</strong> {nfe.emitter?.name}</p>
+              <p><strong>CNPJ/CPF Emitente:</strong> {nfe.emitter?.cnpjCpf}</p>
+              <p><strong>Destinatário:</strong> {nfe.receiver?.name}</p>
+              <p><strong>CNPJ/CPF Destinatário:</strong> {nfe.receiver?.cnpjCpf}</p>
+              <p><strong>Emissão:</strong> {nfe.emissionDate ? new Date(nfe.emissionDate).toLocaleString() : 'N/A'}</p>
+              <p><strong>Valor Total:</strong> {formatCurrency(nfe.value)}</p>
             </div>
             <h4 className="text-md font-medium text-gray-900 mt-4">Produtos</h4>
             <div className="max-h-60 overflow-y-auto">
@@ -47,18 +55,24 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ isOpen, onClose, nfe })
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {nfe.produtos.map((produto, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{produto.prod.xProd}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{produto.prod.qCom}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.prod.vUnCom)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.prod.vProd)}
-                      </td>
+                  {nfe.products && nfe.products.length > 0 ? (
+                    nfe.products.map((produto, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{produto.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{produto.quantity}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatCurrency(produto.unitValue)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatCurrency(produto.totalValue)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="text-center py-4">Nenhum produto encontrado.</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

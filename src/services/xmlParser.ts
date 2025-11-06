@@ -153,7 +153,7 @@ const getValue = (element: Element | null, tagName: string): string | null => {
   return node ? node.textContent : null;
 };
 
-const getElement = (element: Element | null, tagName: string): Element | null => {
+const getElement = (element: Element | Document | null, tagName: string): Element | null => {
   if (!element) return null;
   return element.getElementsByTagName(tagName)[0] || null;
 };
@@ -174,7 +174,8 @@ const getAddress = (element: Element | null) => {
 };
 
 export const parseNFe = (xmlDoc: XMLDocument): NFeData | null => {
-  const nfe = getElement(xmlDoc, 'NFe');
+  const rootElement = xmlDoc.documentElement;
+  const nfe = getElement(rootElement, 'NFe');
   if (!nfe) return null;
 
   const infNFe = getElement(nfe, 'infNFe');
@@ -188,7 +189,7 @@ export const parseNFe = (xmlDoc: XMLDocument): NFeData | null => {
   const pag = getElement(infNFe, 'pag');
   const cobr = getElement(infNFe, 'cobr');
   const infAdic = getElement(infNFe, 'infAdic');
-  const protNFe = getElement(xmlDoc, 'protNFe');
+  const protNFe = getElement(rootElement, 'protNFe');
   const infProt = getElement(protNFe, 'infProt');
 
   const det = Array.from(infNFe.getElementsByTagName('det')).map(d => {

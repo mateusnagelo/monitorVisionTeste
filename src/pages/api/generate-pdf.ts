@@ -1,4 +1,4 @@
-import { generatePdf } from '../../services/pdfGenerator';
+import { generatePdf } from '../../../server/pdfGenerator';
 
 export const POST = async ({ request }) => {
   try {

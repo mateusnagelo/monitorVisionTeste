@@ -90,21 +90,58 @@ export default function XMLReport() {
   };
 
   const handleProcessXMLs = useCallback(async () => {
-    console.log('Processing files:', files); // Log for debugging
-    const dummyData: ReportData[] = files.map((file, index) => ({
-      key: `dummy-${index}-${file.name}`,
-      emissionDate: new Date().toISOString(),
-      emitterCnpjCpf: `11.111.111/0001-1${index}`,
-      emitter: `Emitente Fictício ${index}`,
-      receiverCnpjCpf: `22.222.222/0001-2${index}`,
-      receiver: `Destinatário Fictício ${index}`,
-      number: `${index}`,
-      value: `${100 * (index + 1)}`,
-    }));
+    try {
+      const newNfeMap = new Map<string, Nfe>();
+      const parsedData = await Promise.all(
+        files.map(async (file) => {
+          const xmlText = await file.text();
+          const nfeData = await parseXML(xmlText);
+          if (nfeData && nfeData.key) {
+            newNfeMap.set(nfeData.key, nfeData);
+          }
+          return nfeData;
+        })
+      );
 
-    setFullReportData(dummyData);
-    setNfeMap(new Map()); // Limpa o mapa de NFe
-    setCurrentPage(1);
+      setNfeMap(newNfeMap);
+
+      const flattenedData: ReportData[] = parsedData.filter(Boolean).flatMap(nfeData => {
+        const baseData = {
+          key: nfeData.key,
+          emissionDate: nfeData.emissionDate,
+          emitterCnpjCpf: nfeData.emitter.cnpjCpf,
+          emitter: nfeData.emitter.name,
+          receiverCnpjCpf: nfeData.receiver.cnpjCpf,
+          receiver: nfeData.receiver.name,
+          number: nfeData.number,
+          value: nfeData.value,
+        };
+
+        if (nfeData.products && nfeData.products.length > 0) {
+          return nfeData.products.map(product => ({
+            ...baseData,
+            productCode: product.code,
+            productName: product.name,
+            productQuantity: product.quantity,
+            productUnitValue: product.unitValue,
+            icmsOrig: product.icms?.orig,
+            icmsCST: product.icms?.CST,
+            icmsModBC: product.icms?.modBC,
+            icmsVBC: product.icms?.vBC,
+            icmsPICMS: product.icms?.pICMS,
+            icmsVICMS: product.icms?.vICMS,
+          }));
+        } else {
+          return [baseData];
+        }
+      });
+
+      setFullReportData(flattenedData);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("Erro ao processar arquivos XML:", error);
+      alert("Ocorreu um erro ao processar os arquivos XML. Verifique o console para mais detalhes.");
+    }
   }, [files]);
 
   useEffect(() => {
@@ -116,18 +153,18 @@ export default function XMLReport() {
     };
 
     const columns = modelConfig[model] || Object.keys(fullReportData[0] || {});
-    const dataForTable = fullReportData;
+    let dataForTable = fullReportData;
 
     // Desduplicar se o modelo não for de produtos
-    // if (!model.includes('Produtos')) {
-    //   const uniqueData = new Map<string, ReportData>();
-    //   fullReportData.forEach(item => {
-    //     if (!uniqueData.has(item.key)) {
-    //       uniqueData.set(item.key, item);
-    //     }
-    //   });
-    //   dataForTable = Array.from(uniqueData.values());
-    // }
+    if (!model.includes('Produtos')) {
+      const uniqueData = new Map<string, ReportData>();
+      fullReportData.forEach(item => {
+        if (!uniqueData.has(item.key)) {
+          uniqueData.set(item.key, item);
+        }
+      });
+      dataForTable = Array.from(uniqueData.values());
+    }
     
     setReportData(dataForTable);
     setAvailableColumns(columns);
@@ -218,50 +255,26 @@ export default function XMLReport() {
       receiver: 'Destinatário',
       number: 'Número',
       value: 'Valor',
-      code: 'Código',
-      name: 'Nome',
-      quantity: 'Quantidade',
-      unitValue: 'Valor Unitário',
+      productCode: 'Cód. Produto',
+      productName: 'Produto',
+      productQuantity: 'Qtd.',
+      productUnitValue: 'Vl. Unit.',
+      icmsOrig: 'Origem ICMS',
+      icmsCST: 'CST ICMS',
+      icmsModBC: 'Mod. BC ICMS',
+      icmsVBC: 'VBC ICMS',
+      icmsPICMS: 'Alíq. ICMS',
+      icmsVICMS: 'Valor ICMS',
     };
 
-    let dataToExport: any[] = [];
-
-    if (model.includes('Produtos')) {
-      dataToExport = filteredData.flatMap(item => {
-        if (!item.products || item.products.length === 0) {
-          const baseRow: { [key: string]: any } = {};
-          selectedColumns.forEach(col => {
-            if (col !== 'products') {
-              baseRow[headerMap[col] || col] = (item as any)[col];
-            }
-          });
-          return [baseRow];
-        }
-        return item.products.map(product => {
-          const row: { [key: string]: any } = {};
-          selectedColumns.forEach(col => {
-            if (col === 'products') return;
-            if (headerMap[col]) {
-              row[headerMap[col]] = (item as any)[col] ?? (product as any)[col];
-            } else if (col.startsWith('ICMS_')) {
-              const icmsKey = col.replace('ICMS_', '');
-              row[col] = product.icms ? product.icms[icmsKey] : '';
-            } else {
-              row[col] = (item as any)[col] ?? (product as any)[col];
-            }
-          });
-          return row;
-        });
+    const dataToExport = filteredData.map(item => {
+      const row: { [key: string]: any } = {};
+      selectedColumns.forEach(col => {
+        const header = headerMap[col] || col;
+        row[header] = item[col as keyof ReportData] ?? '';
       });
-    } else {
-      dataToExport = filteredData.map(item => {
-        const row: { [key: string]: any } = {};
-        selectedColumns.forEach(col => {
-          row[headerMap[col] || col] = (item as any)[col];
-        });
-        return row;
-      });
-    }
+      return row;
+    });
 
     exportToExcel(dataToExport, `relatorio_${model.replace(/\s|\//g, '_')}`);
   };
@@ -412,7 +425,7 @@ export default function XMLReport() {
       />
 
       <NfeDetailModal 
-        open={isModalOpen}
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         nfe={selectedNfe}
       />

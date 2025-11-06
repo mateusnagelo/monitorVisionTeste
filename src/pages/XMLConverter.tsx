@@ -1,11 +1,10 @@
-import { Paper, Stack, Typography, Box, Button, Alert, CircularProgress, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, List, ListItem, ListItemText, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Paper, Stack, Typography, Box, Button, Alert, CircularProgress, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, List, ListItem, ListItemText, Accordion, AccordionSummary, AccordionDetails, TextField, Tabs, Tab } from '@mui/material';
 import { Delete, Visibility, ExpandMore } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { useCallback, useState } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { pdf } from '@react-pdf/renderer';
 import DanfeReactPDF from '@/components/DanfeReactPDF';
 
