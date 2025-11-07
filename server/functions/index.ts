@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import { Pool } from 'pg';
 import { generateNfeData } from './pdfGenerator';
 import { DistribuicaoDFe } from 'node-mde';
 import fs from 'fs';
@@ -8,9 +9,29 @@ import fs from 'fs';
 const app = express();
 const port = 3001;
 
+// Configuração do Pool de Conexões com o Banco de Dados
+// O 'pg' irá automaticamente usar a variável de ambiente DATABASE_URL se ela estiver disponível.
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.text({ type: 'application/xml' }));
+
+// Rota de teste para verificar a conexão com o banco de dados
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT NOW()');
+    res.json({ success: true, time: result.rows[0].now });
+    client.release();
+  } catch (error) {
+    console.error('Erro ao conectar ao banco de dados:', error);
+    res.status(500).json({ success: false, error: 'Não foi possível conectar ao banco de dados.' });
+  }
+});
 
 app.post('/api/process-xml', async (req, res) => {
   console.log('[server] Request received for /api/process-xml');

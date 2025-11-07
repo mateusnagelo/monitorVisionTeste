@@ -8,9 +8,11 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@types/pg": "^8.15.6",
     "canvas": "^3.2.0",
     "jsdom": "22.1.0",
     "node-mde": "^0.14.13",
+    "pg": "^8.16.3",
     "serverless-http": "^4.0.0"
   }
 }
