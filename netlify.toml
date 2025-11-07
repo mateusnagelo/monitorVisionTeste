@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build && (cd server && npm install && npm run build)"
+  command = "npm run build && (cd server && npm install --legacy-peer-deps && npm run build)"
   publish = "dist"
   functions = "server/dist"
 
