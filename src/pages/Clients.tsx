@@ -116,38 +116,40 @@ export default function Clients() {
         {filtered.length === 0 ? (
           <Typography variant="body2" color="text.secondary">Nenhum cliente encontrado.</Typography>
         ) : (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>CNPJ</TableCell>
-                <TableCell>Razão Social</TableCell>
-                <TableCell>Fantasia</TableCell>
-                <TableCell>IE</TableCell>
-                <TableCell>Regime</TableCell>
-                <TableCell>Situação</TableCell>
-                <TableCell>Município/UF</TableCell>
-                <TableCell align="right">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.map((c) => (
-                <TableRow key={c.cnpj} hover>
-                  <TableCell>{maskCNPJ(c.cnpj)}</TableCell>
-                  <TableCell>{c.nome}</TableCell>
-                  <TableCell>{c.fantasia}</TableCell>
-                  <TableCell>{c.inscricaoEstadual || '-'}</TableCell>
-                  <TableCell>{c.regimeTributario || '-'}</TableCell>
-                  <TableCell>{c.situacao || '-'}</TableCell>
-                  <TableCell>{`${c.municipio || ''}/${c.uf || ''}`}</TableCell>
-                  <TableCell align="right">
-                    <IconButton color="error" size="small" onClick={() => removeClient(c.cnpj)}>
-                      <DeleteOutlineIcon />
-                    </IconButton>
-                  </TableCell>
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table size="small" sx={{ minWidth: 650 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>CNPJ</TableCell>
+                  <TableCell>Razão Social</TableCell>
+                  <TableCell>Fantasia</TableCell>
+                  <TableCell>IE</TableCell>
+                  <TableCell>Regime</TableCell>
+                  <TableCell>Situação</TableCell>
+                  <TableCell>Município/UF</TableCell>
+                  <TableCell align="right">Ações</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {filtered.map((c) => (
+                  <TableRow key={c.cnpj} hover>
+                    <TableCell>{maskCNPJ(c.cnpj)}</TableCell>
+                    <TableCell>{c.nome}</TableCell>
+                    <TableCell>{c.fantasia}</TableCell>
+                    <TableCell>{c.inscricaoEstadual || '-'}</TableCell>
+                    <TableCell>{c.regimeTributario || '-'}</TableCell>
+                    <TableCell>{c.situacao || '-'}</TableCell>
+                    <TableCell>{`${c.municipio || ''}/${c.uf || ''}`}</TableCell>
+                    <TableCell align="right">
+                      <IconButton color="error" size="small" onClick={() => removeClient(c.cnpj)}>
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
         )}
       </Paper>
 

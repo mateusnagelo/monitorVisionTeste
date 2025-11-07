@@ -32,6 +32,10 @@ import Brightness7 from '@mui/icons-material/Brightness7'
 import AssessmentIcon from '@mui/icons-material/Assessment'
 import BugReportIcon from '@mui/icons-material/BugReport'
 import TransformIcon from '@mui/icons-material/Transform';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 const drawerWidth = 280
 
@@ -66,6 +70,13 @@ type AppLayoutProps = {
 
 export default function AppLayout({ mode, onToggleMode }: AppLayoutProps) {
   const { pathname } = useLocation()
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   const navItems = useMemo(
     () => [
@@ -90,14 +101,55 @@ export default function AppLayout({ mode, onToggleMode }: AppLayoutProps) {
     return pathname.startsWith(to)
   }
 
+  const drawerContent = (
+    <div>
+      <Toolbar />
+      <Box sx={{ p: 2 }}>
+        <TextField
+          fullWidth
+          placeholder="Pesquisar"
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+      <Divider />
+      <List sx={{ px: 1 }}>
+        {navItems.map((item) => (
+          <NavLink key={item.to} to={item.to} style={{ textDecoration: 'none', color: 'inherit' }} end>
+            <ListItemButton selected={isSelected(item.to)} sx={{ borderRadius: 2, mb: 0.5 }}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          </NavLink>
+        ))}
+      </List>
+      <Box sx={{ flexGrow: 1 }} />
+      <Divider />
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          vr1.1.1
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Desenvolvido por VisionApp by Mateus Angelo
+        </Typography>
+      </Box>
+    </div>
+  );
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar
         position="fixed"
         elevation={1}
         sx={{
-          ml: `${drawerWidth}px`,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
           backgroundImage:
             mode === 'light'
               ? 'linear-gradient(90deg, #1976d2 0%, #00bcd4 100%)'
@@ -105,6 +157,15 @@ export default function AppLayout({ mode, onToggleMode }: AppLayoutProps) {
         }}
       >
         <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
           <Avatar sx={{ mr: 1, bgcolor: 'background.paper', color: 'text.primary' }}>MV</Avatar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Monitor Vision App
@@ -117,58 +178,33 @@ export default function AppLayout({ mode, onToggleMode }: AppLayoutProps) {
         </Toolbar>
       </AppBar>
 
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-            borderRight: 'none',
-            bgcolor: 'background.paper',
-          },
-        }}
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        aria-label="mailbox folders"
       >
-        <Toolbar />
-        <Box sx={{ p: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Pesquisar"
-            size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
-        <Divider />
-        <List sx={{ px: 1 }}>
-          {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} style={{ textDecoration: 'none', color: 'inherit' }} end>
-              <ListItemButton selected={isSelected(item.to)} sx={{ borderRadius: 2, mb: 0.5 }}>
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            </NavLink>
-          ))}
-        </List>
-        <Box sx={{ flexGrow: 1 }} />
-        <Divider />
-        <Box sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            vr1.1.1
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Desenvolvido por VisionApp by Mateus Angelo
-          </Typography>
-        </Box>
-      </Drawer>
+        <Drawer
+          variant={isMobile ? "temporary" : "permanent"}
+          open={isMobile ? mobileOpen : true}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              borderRight: 'none',
+              bgcolor: 'background.paper',
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}>
         <Toolbar />
         {/* Envolve o conteúdo principal com o ErrorBoundary para capturar erros */}
         <ErrorBoundary>

@@ -32,10 +32,11 @@ const ReportTable: React.FC<ReportTableProps> = ({ data, model, selectedColumns,
   const mainHeaders = selectedColumns;
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
+    <Box sx={{ overflowX: 'auto' }}>
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }}>
+          <TableHead>
+            <TableRow>
             {mainHeaders.map((header) => (
               <TableCell key={header}>{headerMap[header] || header}</TableCell>
             ))}
@@ -52,6 +53,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ data, model, selectedColumns,
         </TableBody>
       </Table>
     </TableContainer>
+    </Box>
   );
 };
 

@@ -406,10 +406,9 @@ export default function CNPJLookup() {
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between">
               <Typography variant="h6" color="primary.main" fontWeight={700}>Resultado da consulta</Typography>
-              <Stack direction="row" spacing={1}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                 <Button variant="outlined" startIcon={<PictureAsPdfIcon />} onClick={() => generatePdf(data, digits)}>Salvar PDF</Button>
                 <Button variant="contained" color="success" startIcon={<WhatsAppIcon />} onClick={() => shareViaWhatsApp(data, digits)}>Enviar via WhatsApp</Button>
-
               </Stack>
             </Stack>
 
