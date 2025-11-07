@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "canvas": "^3.2.0",
+    "jsdom": "22.1.0",
     "node-mde": "^0.14.13",
     "serverless-http": "^4.0.0"
   }
