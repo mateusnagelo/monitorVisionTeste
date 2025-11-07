@@ -86,24 +86,32 @@ const LogsPage = () => {
                       <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
                       <TableCell>{log.message}</TableCell>
                       <TableCell>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <span>{log.ip_address.split(',')[0]}...</span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{log.ip_address}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        {log.ip_address ? (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span>{log.ip_address.split(',')[0]}...</span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{log.ip_address}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          "N/A"
+                        )}
                       </TableCell>
                       <TableCell>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <span className="truncate max-w-[200px] block">{log.user_agent}</span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{log.user_agent}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        {log.user_agent ? (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span className="truncate max-w-[200px] block">{log.user_agent}</span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{log.user_agent}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          "N/A"
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
