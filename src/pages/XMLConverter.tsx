@@ -83,7 +83,7 @@ export default function XMLConverter() {
     for (const file of files) {
       try {
         const xmlString = await file.text();
-        const response = await fetch('http://localhost:3001/api/process-xml', {
+        const response = await fetch('/api/process-xml', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/xml',
@@ -101,7 +101,7 @@ export default function XMLConverter() {
           }
         } else {
           const errorText = await response.text();
-          errors.push(`Falha ao processar o arquivo: ${file.name}. ${errorText}`);
+          errors.push(`Falha ao processar o arquivo: ${file.name}. Detalhes: ${errorText}`);
         }
       } catch (e: any) {
         errors.push(`Erro ao processar o arquivo ${file.name}: ${e.message}`);

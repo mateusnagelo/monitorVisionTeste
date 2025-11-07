@@ -13,6 +13,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.text({ type: 'application/xml' }));
 
 app.post('/api/process-xml', async (req, res) => {
+  console.log('[server] Request received for /api/process-xml');
+  console.log('[server] Raw request body:', req.body);
   console.log('[server] Recebida requisição para /api/process-xml');
   const xmlContent = req.body;
 
@@ -28,7 +30,7 @@ app.post('/api/process-xml', async (req, res) => {
     res.json(nfeData);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro interno ao processar o XML.';
-    console.error('[server] Erro ao processar XML:', error);
+    console.error('[server] Erro ao processar XML:', JSON.stringify(error, null, 2));
     res.status(500).json({ error: errorMessage });
   }
 });
@@ -88,6 +90,10 @@ app.post('/api/nfe-data', async (req, res) => {
 });
 */
 
+import serverless from 'serverless-http';
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
+
+module.exports.handler = serverless(app);
