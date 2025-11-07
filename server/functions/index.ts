@@ -48,11 +48,35 @@ app.post('/api/process-xml', async (req, res) => {
     console.log('[server] Chamando generateNfeData.');
     const nfeData = await generateNfeData(xmlContent);
     console.log('[server] Dados da NFe gerados com sucesso.');
+
+    // Salva um log no banco de dados
+    try {
+      const logMessage = `XML da chave ${nfeData.chaveAcesso} processado com sucesso.`;
+      await pool.query('INSERT INTO logs (message) VALUES ($1)', [logMessage]);
+      console.log('[server] Log salvo no banco de dados.');
+    } catch (dbError) {
+      console.error('[server] Erro ao salvar log no banco de dados:', dbError);
+      // Não bloqueia a resposta principal se o log falhar
+    }
+
     res.json(nfeData);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro interno ao processar o XML.';
     console.error('[server] Erro ao processar XML:', JSON.stringify(error, null, 2));
     res.status(500).json({ error: errorMessage });
+  }
+});
+
+// Rota para buscar todos os logs
+app.get('/api/logs', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM logs ORDER BY created_at DESC');
+    res.json({ success: true, logs: result.rows });
+    client.release();
+  } catch (error) {
+    console.error('Erro ao buscar logs:', error);
+    res.status(500).json({ success: false, error: 'Não foi possível buscar os logs.' });
   }
 });
 
