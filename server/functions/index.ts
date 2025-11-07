@@ -52,7 +52,13 @@ app.post('/api/process-xml', async (req, res) => {
     // Salva um log no banco de dados
     try {
       const logMessage = `XML da chave ${nfeData.chaveDeAcesso} processado com sucesso.`;
-      await pool.query('INSERT INTO logs (message) VALUES ($1)', [logMessage]);
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const userAgent = req.headers['user-agent'];
+
+      await pool.query(
+        'INSERT INTO logs (message, ip_address, user_agent) VALUES ($1, $2, $3)',
+        [logMessage, ip, userAgent]
+      );
       console.log('[server] Log salvo no banco de dados.');
     } catch (dbError) {
       console.error('[server] Erro ao salvar log no banco de dados:', dbError);
