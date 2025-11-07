@@ -1,19 +1,19 @@
-import { generatePdf } from '../../../server/pdfGenerator';
+import { generateNfeData } from '../../../server/pdfGenerator';
 
-export const POST = async ({ request }) => {
+export const POST = async ({ request }: { request: Request }) => {
   try {
     const xmlContent = await request.text();
     if (!xmlContent) {
       return new Response('Corpo da requisição está vazio.', { status: 400 });
     }
 
-    const pdfBlob = await generatePdf(xmlContent);
+    const pdfBlob = await generateNfeData(xmlContent);
 
     if (pdfBlob) {
-      return new Response(pdfBlob, {
+      return new Response(JSON.stringify(pdfBlob), {
         status: 200,
         headers: {
-          'Content-Type': 'application/pdf',
+          'Content-Type': 'application/json',
         },
       });
     } else {

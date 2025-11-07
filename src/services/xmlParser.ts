@@ -153,6 +153,11 @@ const getValue = (element: Element | null, tagName: string): string | null => {
   return node ? node.textContent : null;
 };
 
+const getNumber = (element: Element | null, tagName: string): number => {
+  const value = getValue(element, tagName);
+  return value ? parseFloat(value) : 0;
+};
+
 const getElement = (element: Element | Document | null, tagName: string): Element | null => {
   if (!element) return null;
   return element.getElementsByTagName(tagName)[0] || null;
@@ -173,7 +178,9 @@ const getAddress = (element: Element | null) => {
   };
 };
 
-export const parseNFe = (xmlDoc: XMLDocument): NFeData | null => {
+import { Nfe } from '../types/Nfe';
+
+export const parseNFe = (xmlDoc: XMLDocument): Nfe | null => {
   const rootElement = xmlDoc.documentElement;
   const nfe = getElement(rootElement, 'NFe');
   if (!nfe) return null;
@@ -185,213 +192,101 @@ export const parseNFe = (xmlDoc: XMLDocument): NFeData | null => {
   const emit = getElement(infNFe, 'emit');
   const dest = getElement(infNFe, 'dest');
   const total = getElement(infNFe, 'total');
-  const transp = getElement(infNFe, 'transp');
-  const pag = getElement(infNFe, 'pag');
-  const cobr = getElement(infNFe, 'cobr');
-  const infAdic = getElement(infNFe, 'infAdic');
-  const protNFe = getElement(rootElement, 'protNFe');
+  const ICMSTot = getElement(total, 'ICMSTot');
+  const protNFe = getElement(nfe, 'protNFe');
   const infProt = getElement(protNFe, 'infProt');
 
-  const det = Array.from(infNFe.getElementsByTagName('det')).map(d => {
-    const prod = getElement(d, 'prod');
-    const imposto = getElement(d, 'imposto');
-    const icms = getElement(imposto, 'ICMS');
-    const icmsChild = icms ? getElement(icms, (icms.firstElementChild?.tagName || 'ICMS00')) : null;
-    const ipi = getElement(imposto, 'IPI');
-    const ipiChild = ipi ? getElement(ipi, (ipi.firstElementChild?.tagName || 'IPITrib')) : null;
-    const pis = getElement(imposto, 'PIS');
-    const pisChild = pis ? getElement(pis, (pis.firstElementChild?.tagName || 'PISNT')) : null;
-    const cofins = getElement(imposto, 'COFINS');
-    const cofinsChild = cofins ? getElement(cofins, (cofins.firstElementChild?.tagName || 'COFINSNT')) : null;
-
-    return {
-      nItem: d.getAttribute('nItem'),
-      prod: {
-        cProd: getValue(prod, 'cProd'),
-        cEAN: getValue(prod, 'cEAN'),
-        xProd: getValue(prod, 'xProd'),
-        NCM: getValue(prod, 'NCM'),
-        CFOP: getValue(prod, 'CFOP'),
-        uCom: getValue(prod, 'uCom'),
-        qCom: getValue(prod, 'qCom'),
-        vUnCom: getValue(prod, 'vUnCom'),
-        vProd: getValue(prod, 'vProd'),
-        cEANTrib: getValue(prod, 'cEANTrib'),
-        uTrib: getValue(prod, 'uTrib'),
-        qTrib: getValue(prod, 'qTrib'),
-        vUnTrib: getValue(prod, 'vUnTrib'),
-        vDesc: getValue(prod, 'vDesc'),
-        indTot: getValue(prod, 'indTot'),
-        infAdProd: getValue(d, 'infAdProd'),
-      },
-      imposto: {
-        vTotTrib: getValue(imposto, 'vTotTrib'),
-        ICMS: {
-          orig: getValue(icmsChild, 'orig'),
-          CST: getValue(icmsChild, 'CST') || getValue(icmsChild, 'CSOSN'),
-          modBC: getValue(icmsChild, 'modBC'),
-          vBC: getValue(icmsChild, 'vBC'),
-          pICMS: getValue(icmsChild, 'pICMS'),
-          vICMS: getValue(icmsChild, 'vICMS'),
-        },
-        IPI: {
-          CST: getValue(ipiChild, 'CST'),
-          vBC: getValue(ipiChild, 'vBC'),
-          pIPI: getValue(ipiChild, 'pIPI'),
-          vIPI: getValue(ipiChild, 'vIPI'),
-        },
-        PIS: {
-          CST: getValue(pisChild, 'CST'),
-          vBC: getValue(pisChild, 'vBC'),
-          pPIS: getValue(pisChild, 'pPIS'),
-          vPIS: getValue(pisChild, 'vPIS'),
-        },
-        COFINS: {
-          CST: getValue(cofinsChild, 'CST'),
-          vBC: getValue(cofinsChild, 'vBC'),
-          pCOFINS: getValue(cofinsChild, 'pCOFINS'),
-          vCOFINS: getValue(cofinsChild, 'vCOFINS'),
-        },
-      },
-    };
-  });
-
-  const transporta = getElement(transp, 'transporta');
-  const veicTransp = getElement(transp, 'veicTransp');
-  const vol = Array.from(transp?.getElementsByTagName('vol') || []).map(v => ({
-    qVol: getValue(v, 'qVol'),
-    esp: getValue(v, 'esp'),
-    marca: getValue(v, 'marca'),
-    nVol: getValue(v, 'nVol'),
-    pesoL: getValue(v, 'pesoL'),
-    pesoB: getValue(v, 'pesoB'),
-  }));
-
-  const fat = getElement(cobr, 'fat');
-  const dup = Array.from(cobr?.getElementsByTagName('dup') || []).map(d => ({
-    nDup: getValue(d, 'nDup'),
-    dVenc: getValue(d, 'dVenc'),
-    vDup: getValue(d, 'vDup'),
-  }));
-
-  const detPag = Array.from(pag?.getElementsByTagName('detPag') || []).map(p => ({
-    tPag: getValue(p, 'tPag'),
-    vPag: getValue(p, 'vPag'),
-  }));
-
-  const ICMSTot = getElement(total, 'ICMSTot');
-
   return {
+    chave: getValue(infProt, 'chNFe') || '',
+    versao: nfe.getAttribute('versao') || '',
     ide: {
-      cUF: getValue(ide, 'cUF'),
-      cNF: getValue(ide, 'cNF'),
-      natOp: getValue(ide, 'natOp'),
-      mod: getValue(ide, 'mod'),
-      serie: getValue(ide, 'serie'),
-      nNF: getValue(ide, 'nNF'),
-      dhEmi: getValue(ide, 'dhEmi'),
-      dhSaiEnt: getValue(ide, 'dhSaiEnt'),
-      tpNF: getValue(ide, 'tpNF'),
-      idDest: getValue(ide, 'idDest'),
-      cMunFG: getValue(ide, 'cMunFG'),
-      tpImp: getValue(ide, 'tpImp'),
-      tpEmis: getValue(ide, 'tpEmis'),
-      cDV: getValue(ide, 'cDV'),
-      tpAmb: getValue(ide, 'tpAmb'),
-      finNFe: getValue(ide, 'finNFe'),
-      indFinal: getValue(ide, 'indFinal'),
-      indPres: getValue(ide, 'indPres'),
-      procEmi: getValue(ide, 'procEmi'),
-      verProc: getValue(ide, 'verProc'),
+      cUF: getValue(ide, 'cUF') || '',
+      cNF: getValue(ide, 'cNF') || '',
+      natOp: getValue(ide, 'natOp') || '',
+      mod: getValue(ide, 'mod') || '',
+      serie: getValue(ide, 'serie') || '',
+      nNF: getValue(ide, 'nNF') || '',
+      dhEmi: getValue(ide, 'dhEmi') || '',
+      dhSaiEnt: getValue(ide, 'dhSaiEnt') || '',
+      tpNF: getValue(ide, 'tpNF') || '',
+      idDest: getValue(ide, 'idDest') || '',
+      cMunFG: getValue(ide, 'cMunFG') || '',
+      tpImp: getValue(ide, 'tpImp') || '',
+      tpEmis: getValue(ide, 'tpEmis') || '',
+      cDV: getValue(ide, 'cDV') || '',
+      tpAmb: getValue(ide, 'tpAmb') || '',
+      finNFe: getValue(ide, 'finNFe') || '',
+      indFinal: getValue(ide, 'indFinal') || '',
+      indPres: getValue(ide, 'indPres') || '',
+      procEmi: getValue(ide, 'procEmi') || '',
+      verProc: getValue(ide, 'verProc') || '',
     },
     emit: {
-      CNPJ: getValue(emit, 'CNPJ'),
-      xNome: getValue(emit, 'xNome'),
-      xFant: getValue(emit, 'xFant'),
-      enderEmit: getAddress(getElement(emit, 'enderEmit')),
-      IE: getValue(emit, 'IE'),
-      CRT: getValue(emit, 'CRT'),
+      CNPJ: getValue(emit, 'CNPJ') || '',
+      xNome: getValue(emit, 'xNome') || '',
+      xFant: getValue(emit, 'xFant') || '',
+      enderEmit: {
+        xLgr: getValue(getElement(emit, 'enderEmit'), 'xLgr') || '',
+        nro: getValue(getElement(emit, 'enderEmit'), 'nro') || '',
+        xBairro: getValue(getElement(emit, 'enderEmit'), 'xBairro') || '',
+        cMun: getValue(getElement(emit, 'enderEmit'), 'cMun') || '',
+        xMun: getValue(getElement(emit, 'enderEmit'), 'xMun') || '',
+        UF: getValue(getElement(emit, 'enderEmit'), 'UF') || '',
+        CEP: getValue(getElement(emit, 'enderEmit'), 'CEP') || '',
+        cPais: getValue(getElement(emit, 'enderEmit'), 'cPais') || '',
+        xPais: getValue(getElement(emit, 'enderEmit'), 'xPais') || '',
+      },
+      IE: getValue(emit, 'IE') || '',
+      CRT: getValue(emit, 'CRT') || '',
     },
     dest: {
-      CNPJ: getValue(dest, 'CNPJ') || getValue(dest, 'CPF'),
-      xNome: getValue(dest, 'xNome'),
-      enderDest: getAddress(getElement(dest, 'enderDest')),
-      indIEDest: getValue(dest, 'indIEDest'),
-      IE: getValue(dest, 'IE'),
-    },
-    cobr: {
-      fat: {
-        nFat: getValue(fat, 'nFat'),
-        vOrig: getValue(fat, 'vOrig'),
-        vDesc: getValue(fat, 'vDesc'),
-        vLiq: getValue(fat, 'vLiq'),
+      CNPJ: getValue(dest, 'CNPJ') || '',
+      xNome: getValue(dest, 'xNome') || '',
+      enderDest: {
+        xLgr: getValue(getElement(dest, 'enderDest'), 'xLgr') || '',
+        nro: getValue(getElement(dest, 'enderDest'), 'nro') || '',
+        xBairro: getValue(getElement(dest, 'enderDest'), 'xBairro') || '',
+        cMun: getValue(getElement(dest, 'enderDest'), 'cMun') || '',
+        xMun: getValue(getElement(dest, 'enderDest'), 'xMun') || '',
+        UF: getValue(getElement(dest, 'enderDest'), 'UF') || '',
+        CEP: getValue(getElement(dest, 'enderDest'), 'CEP') || '',
+        cPais: getValue(getElement(dest, 'enderDest'), 'cPais') || '',
+        xPais: getValue(getElement(dest, 'enderDest'), 'xPais') || '',
       },
-      dup,
+      indIEDest: getValue(dest, 'indIEDest') || '',
+      IE: getValue(dest, 'IE') || '',
     },
-    pag: {
-      detPag,
-      vTroco: getValue(pag, 'vTroco'),
-    },
-    det,
     total: {
       ICMSTot: {
-        vBC: getValue(ICMSTot, 'vBC'),
-        vICMS: getValue(ICMSTot, 'vICMS'),
-        vICMSDeson: getValue(ICMSTot, 'vICMSDeson'),
-        vFCPUFDest: getValue(ICMSTot, 'vFCPUFDest'),
-        vICMSUFDest: getValue(ICMSTot, 'vICMSUFDest'),
-        vICMSUFRemet: getValue(ICMSTot, 'vICMSUFRemet'),
-        vFCP: getValue(ICMSTot, 'vFCP'),
-        vBCST: getValue(ICMSTot, 'vBCST'),
-        vST: getValue(ICMSTot, 'vST'),
-        vFCPST: getValue(ICMSTot, 'vFCPST'),
-        vFCPSTRet: getValue(ICMSTot, 'vFCPSTRet'),
-        vProd: getValue(ICMSTot, 'vProd'),
-        vFrete: getValue(ICMSTot, 'vFrete'),
-        vSeg: getValue(ICMSTot, 'vSeg'),
-        vDesc: getValue(ICMSTot, 'vDesc'),
-        vII: getValue(ICMSTot, 'vII'),
-        vIPI: getValue(ICMSTot, 'vIPI'),
-        vIPIDevol: getValue(ICMSTot, 'vIPIDevol'),
-        vPIS: getValue(ICMSTot, 'vPIS'),
-        vCOFINS: getValue(ICMSTot, 'vCOFINS'),
-        vOutro: getValue(ICMSTot, 'vOutro'),
-        vNF: getValue(ICMSTot, 'vNF'),
+        vBC: getNumber(ICMSTot, 'vBC'),
+        vICMS: getNumber(ICMSTot, 'vICMS'),
+        vICMSDeson: getNumber(ICMSTot, 'vICMSDeson'),
+        vFCP: getNumber(ICMSTot, 'vFCP'),
+        vBCST: getNumber(ICMSTot, 'vBCST'),
+        vST: getNumber(ICMSTot, 'vST'),
+        vFCPST: getNumber(ICMSTot, 'vFCPST'),
+        vFCPSTRet: getNumber(ICMSTot, 'vFCPSTRet'),
+        vProd: getNumber(ICMSTot, 'vProd'),
+        vFrete: getNumber(ICMSTot, 'vFrete'),
+        vSeg: getNumber(ICMSTot, 'vSeg'),
+        vDesc: getNumber(ICMSTot, 'vDesc'),
+        vII: getNumber(ICMSTot, 'vII'),
+        vIPI: getNumber(ICMSTot, 'vIPI'),
+        vIPIDevol: getNumber(ICMSTot, 'vIPIDevol'),
+        vPIS: getNumber(ICMSTot, 'vPIS'),
+        vCOFINS: getNumber(ICMSTot, 'vCOFINS'),
+        vOutro: getNumber(ICMSTot, 'vOutro'),
+        vNF: getNumber(ICMSTot, 'vNF'),
       },
     },
-    transp: {
-      modFrete: getValue(transp, 'modFrete'),
-      transporta: {
-        CNPJ: getValue(transporta, 'CNPJ'),
-        xNome: getValue(transporta, 'xNome'),
-        IE: getValue(transporta, 'IE'),
-        xEnder: getValue(transporta, 'xEnder'),
-        xMun: getValue(transporta, 'xMun'),
-        UF: getValue(transporta, 'UF'),
-      },
-      veicTransp: {
-        placa: getValue(veicTransp, 'placa'),
-        UF: getValue(veicTransp, 'UF'),
-        RNTC: getValue(veicTransp, 'RNTC'),
-      },
-      vol,
-    },
-    infAdic: {
-      infCpl: getValue(infAdic, 'infCpl'),
-    },
-    protNFe: {
-      infProt: {
-        tpAmb: getValue(infProt, 'tpAmb'),
-        verAplic: getValue(infProt, 'verAplic'),
-        chNFe: getValue(infProt, 'chNFe'),
-        dhRecbto: getValue(infProt, 'dhRecbto'),
-        nProt: getValue(infProt, 'nProt'),
-        digVal: getValue(infProt, 'digVal'),
-        cStat: getValue(infProt, 'cStat'),
-        xMotivo: getValue(infProt, 'xMotivo'),
-      },
-    },
-    tipo: 'NFe',
+    produtos: [],
+    number: null,
+    key: null,
+    emitter: null,
+    receiver: null,
+    emissionDate: null,
+    value: null,
+    products: null,
   };
 };
 

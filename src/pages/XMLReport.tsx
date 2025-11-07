@@ -111,7 +111,7 @@ export default function XMLReport() {
           }
 
           const nfeData = await response.json();
-          const key = nfeData.chaveDeAcesso;
+          const key = nfeData.chave;
           if (key) {
             newNfeMap.set(key, nfeData as Nfe);
           }
@@ -129,31 +129,31 @@ export default function XMLReport() {
 
       setNfeMap(newNfeMap);
 
-      const flattenedData: ReportData[] = parsedData.flatMap(nfeData => {
+      const flattenedData: ReportData[] = parsedData.flatMap(nfe => {
         const baseData = {
-          key: nfeData.chaveDeAcesso,
-          emissionDate: nfeData.ide?.dhEmi,
-          emitterCnpjCpf: nfeData.emit?.CNPJ,
-          emitter: nfeData.emit?.xNome,
-          receiverCnpjCpf: nfeData.dest?.CNPJ,
-          receiver: nfeData.dest?.xNome,
-          number: nfeData.ide?.nNF,
-          value: nfeData.total?.ICMSTot?.vNF,
+          key: nfe.chave,
+          emissionDate: nfe.emissionDate,
+          emitterCnpjCpf: nfe.emitter.cnpj,
+          emitter: nfe.emitter.name,
+          receiverCnpjCpf: nfe.receiver.cnpj,
+          receiver: nfe.receiver.name,
+          number: nfe.number,
+          value: nfe.value,
         };
 
-        if (nfeData.det && nfeData.det.length > 0) {
-          return nfeData.det.map((item: any) => ({
+        if (nfe.produtos && nfe.produtos.length > 0) {
+          return nfe.produtos.map((product: any) => ({
             ...baseData,
-            productCode: item.prod?.cProd,
-            productName: item.prod?.xProd,
-            productQuantity: item.prod?.qCom,
-            productUnitValue: item.prod?.vUnCom,
-            icmsOrig: item.imposto?.ICMS?.CSOSN || item.imposto?.ICMS?.CST,
-            icmsCST: item.imposto?.ICMS?.CST || item.imposto?.ICMS?.CSOSN,
-            icmsModBC: item.imposto?.ICMS?.modBC,
-            icmsVBC: item.imposto?.ICMS?.vBC,
-            icmsPICMS: item.imposto?.ICMS?.pICMS,
-            icmsVICMS: item.imposto?.ICMS?.vICMS,
+            productCode: product.prod?.cProd,
+            productName: product.prod?.xProd,
+            productQuantity: product.prod?.qCom,
+            productUnitValue: product.prod?.vUnCom,
+            icmsOrig: product.imposto?.ICMS?.CSOSN || product.imposto?.ICMS?.CST,
+            icmsCST: product.imposto?.ICMS?.CST || product.imposto?.ICMS?.CSOSN,
+            icmsModBC: product.imposto?.ICMS?.modBC,
+            icmsVBC: product.imposto?.ICMS?.vBC,
+            icmsPICMS: product.imposto?.ICMS?.pICMS,
+            icmsVICMS: product.imposto?.ICMS?.vICMS,
           }));
         } else {
           return [baseData];
@@ -219,260 +219,246 @@ export default function XMLReport() {
       });
       return newRow;
     });
-    exportToExcel(dataToExport, 'relatorio_nfe', 'Relatório NFe');
+    if (dataToExport.length > 0) {
+      exportToExcel(dataToExport, 'relatorio_nfe');
+    } else {
+      alert('Nenhum dado para exportar.');
+    }
   };
 
   const handleProcessAccessKeys = async () => {
-    const keys = accessKeys.split(/\n|\s/)
-      .map(key => key.trim())
-      .filter(key => key.length === 44 && /^[0-9]+$/.test(key));
+    if (accessKeys.trim() !== '') {
+      const keys = accessKeys.split(/\n|,/).map(key => key.trim()).filter(key => key !== '');
+      const processedData: ReportData[] = [];
 
-    if (keys.length === 0) {
-      alert('Nenhuma chave de acesso válida encontrada.');
-      return;
-    }
+      for (const key of keys) {
+        try {
+          const response = await fetch(`/api/getNfeData?chave=${key}`);
+          const nfeData = await response.json();
 
-    try {
-      const response = await fetch('http://localhost:3001/api/nfe-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ accessKeys: keys }),
-      });
+          const baseData = {
+            key: nfeData.chave,
+            number: nfeData.ide?.nNF,
+            emissionDate: nfeData.ide?.dhEmi,
+            emitter: nfeData.emit?.xNome,
+            emitterCnpjCpf: nfeData.emit?.CNPJ,
+            receiver: nfeData.dest?.xNome,
+            receiverCnpjCpf: nfeData.dest?.CNPJ || nfeData.dest?.CPF,
+            value: nfeData.total?.ICMSTot?.vNF,
+          };
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+          if (nfeData.produtos && nfeData.produtos.length > 0) {
+            const productsData = nfeData.produtos.map((item: any) => ({
+              ...baseData,
+              productCode: item.prod?.cProd,
+              productName: item.prod?.xProd,
+              productQuantity: item.prod?.qCom,
+              productUnitValue: item.prod?.vUnCom,
+              icmsOrig: item.imposto?.ICMS?.ICMS00?.orig || item.imposto?.ICMS?.ICMS10?.orig || item.imposto?.ICMS?.ICMS20?.orig,
+              icmsCST: item.imposto?.ICMS?.ICMS00?.CST || item.imposto?.ICMS?.ICMS10?.CST || item.imposto?.ICMS?.ICMS20?.CST,
+              icmsModBC: item.imposto?.ICMS?.ICMS00?.modBC || item.imposto?.ICMS?.ICMS10?.modBC || item.imposto?.ICMS?.ICMS20?.modBC,
+              icmsVBC: item.imposto?.ICMS?.ICMS00?.vBC || item.imposto?.ICMS?.ICMS10?.vBC || item.imposto?.ICMS?.ICMS20?.vBC,
+              icmsPICMS: item.imposto?.ICMS?.ICMS00?.pICMS || item.imposto?.ICMS?.ICMS10?.pICMS || item.imposto?.ICMS?.ICMS20?.pICMS,
+              icmsVICMS: item.imposto?.ICMS?.ICMS00?.vICMS || item.imposto?.ICMS?.ICMS10?.vICMS || item.imposto?.ICMS?.ICMS20?.vICMS,
+            }));
+            processedData.push(...productsData);
+          } else {
+            processedData.push(baseData);
+          }
+        } catch (error) {
+          console.error(`Erro ao processar a chave ${key}:`, error);
+        }
       }
 
-      const data = await response.json();
-
-      const flattenedData: ReportData[] = data.flatMap((nfeData: any) => {
-        if (!nfeData) return [];
-
-        const baseData = {
-          key: nfeData.protNFe?.infProt?.chNFe,
-          emissionDate: nfeData.ide?.dhEmi,
-          emitterCnpjCpf: nfeData.emit?.CNPJ || nfeData.emit?.CPF,
-          emitter: nfeData.emit?.xNome,
-          receiverCnpjCpf: nfeData.dest?.CNPJ || nfeData.dest?.CPF,
-          receiver: nfeData.dest?.xNome,
-          number: nfeData.ide?.nNF,
-          value: nfeData.total?.ICMSTot?.vNF,
-        };
-
-        if (nfeData.det && nfeData.det.length > 0) {
-          return nfeData.det.map((item: any) => ({
-            ...baseData,
-            productCode: item.prod?.cProd,
-            productName: item.prod?.xProd,
-            productQuantity: item.prod?.qCom,
-            productUnitValue: item.prod?.vUnCom,
-            icmsOrig: item.imposto?.ICMS?.ICMS00?.orig || item.imposto?.ICMS?.ICMS10?.orig || item.imposto?.ICMS?.ICMS20?.orig,
-            icmsCST: item.imposto?.ICMS?.ICMS00?.CST || item.imposto?.ICMS?.ICMS10?.CST || item.imposto?.ICMS?.ICMS20?.CST,
-            icmsModBC: item.imposto?.ICMS?.ICMS00?.modBC || item.imposto?.ICMS?.ICMS10?.modBC || item.imposto?.ICMS?.ICMS20?.modBC,
-            icmsVBC: item.imposto?.ICMS?.ICMS00?.vBC || item.imposto?.ICMS?.ICMS10?.vBC || item.imposto?.ICMS?.ICMS20?.vBC,
-            icmsPICMS: item.imposto?.ICMS?.ICMS00?.pICMS || item.imposto?.ICMS?.ICMS10?.pICMS || item.imposto?.ICMS?.ICMS20?.pICMS,
-            icmsVICMS: item.imposto?.ICMS?.ICMS00?.vICMS || item.imposto?.ICMS?.ICMS10?.vICMS || item.imposto?.ICMS?.ICMS20?.vICMS,
-          }));
-        } else {
-          return baseData;
-        }
-      });
-
-      setFullReportData(flattenedData);
+      setFullReportData(processedData);
       setCurrentPage(1);
-
-    } catch (error) {
-      console.error("Erro ao processar chaves de acesso:", error);
-      alert('Falha ao buscar dados da NFe. Verifique o console para mais detalhes.');
     }
   };
 
   const handleExportExcel = () => {
-    const headerMap: { [key: string]: string } = {
-      key: 'Chave',
-      emissionDate: 'Emissão',
-      emitterCnpjCpf: 'Emitente CNPJ/CPF',
-      emitter: 'Emitente',
-      receiverCnpjCpf: 'Destinatário CNPJ/CPF',
-      receiver: 'Destinatário',
-      number: 'Número',
-      value: 'Valor',
-      productCode: 'Cód. Produto',
-      productName: 'Produto',
-      productQuantity: 'Qtd.',
-      productUnitValue: 'Vl. Unit.',
-      icmsOrig: 'Origem ICMS',
-      icmsCST: 'CST ICMS',
-      icmsModBC: 'Mod. BC ICMS',
-      icmsVBC: 'VBC ICMS',
-      icmsPICMS: 'Alíq. ICMS',
-      icmsVICMS: 'Valor ICMS',
+      const headerMap: { [key: string]: string } = {
+        key: 'Chave',
+        emissionDate: 'Emissão',
+        emitterCnpjCpf: 'Emitente CNPJ/CPF',
+        emitter: 'Emitente',
+        receiverCnpjCpf: 'Destinatário CNPJ/CPF',
+        receiver: 'Destinatário',
+        number: 'Número',
+        value: 'Valor',
+        productCode: 'Cód. Produto',
+        productName: 'Produto',
+        productQuantity: 'Qtd.',
+        productUnitValue: 'Vl. Unit.',
+        icmsOrig: 'Origem ICMS',
+        icmsCST: 'CST ICMS',
+        icmsModBC: 'Mod. BC ICMS',
+        icmsVBC: 'VBC ICMS',
+        icmsPICMS: 'Alíq. ICMS',
+        icmsVICMS: 'Valor ICMS',
+      };
+
+      const dataToExport = filteredData.map(item => {
+        const row: { [key: string]: any } = {};
+        selectedColumns.forEach(col => {
+          const header = headerMap[col] || col;
+          row[header] = item[col as keyof ReportData] ?? '';
+        });
+        return row;
+      });
+
+      exportToExcel(dataToExport, `relatorio_${model.replace(/\s|\//g, '_')}`);
     };
 
-    const dataToExport = filteredData.map(item => {
-      const row: { [key: string]: any } = {};
-      selectedColumns.forEach(col => {
-        const header = headerMap[col] || col;
-        row[header] = item[col as keyof ReportData] ?? '';
-      });
-      return row;
-    });
+    const filteredData = reportData.filter(item =>
+      Object.values(item).some(value =>
+        String(value).toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
 
-    exportToExcel(dataToExport, `relatorio_${model.replace(/\s|\//g, '_')}`);
-  };
+    const paginatedData = filteredData.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage);
 
-  const filteredData = reportData.filter(item =>
-    Object.values(item).some(value =>
-      String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
-
-  const paginatedData = filteredData.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage);
-
-  return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Relatório de XMLs
-      </Typography>
-
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Grid item>
-          <Button variant="contained" color="success">Customizar Modelo</Button>
-        </Grid>
-        <Grid item>
-          <Button variant="contained" color="success">Importar Modelo</Button>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
-                <InputLabel>Modelo</InputLabel>
-                <Select value={model} label="Modelo" onChange={(e) => setModel(e.target.value)}>
-                    {Object.keys(modelConfig).map(modelName => (
-                      <MenuItem key={modelName} value={modelName}>{modelName}</MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-        </Grid>
-        <Grid item>
-          <Button variant="contained" onClick={() => setColumnSelectorOpen(true)}>Colunas</Button>
-        </Grid>
-        <Grid item>
-          <Button variant="contained" onClick={handleExportExcel}>Exportar Excel</Button>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-             <TextField fullWidth label="Pesquisar" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-         </Grid>
-       </Grid>
-
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Grid item>
-            <FormControl size="small">
-                <Select value={resultsPerPage} onChange={(e) => setResultsPerPage(e.target.value as number)}>
-                    <MenuItem value={10}>10</MenuItem>
-                    <MenuItem value={25}>25</MenuItem>
-                    <MenuItem value={50}>50</MenuItem>
-                    <MenuItem value={100}>100</MenuItem>
-                </Select>
-            </FormControl>
-        </Grid>
-        <Grid item>
-            <Typography variant="body2">resultados por página</Typography>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="Colar Chaves de Acesso (uma por linha)"
-            multiline
-            rows={4}
-            value={accessKeys}
-            onChange={(e) => setAccessKeys(e.target.value)}
-            variant="outlined"
-          />
-        </Grid>
-        <Grid item>
-          <Button variant="contained" onClick={handleProcessAccessKeys}>
-            Processar Chaves
-          </Button>
-        </Grid>
-      </Grid>
-
-      <Paper
-        {
-...getRootProps()
-        }
-        sx={{
-          border: `2px dashed ${isDragActive ? '#1976d2' : '#cccccc'}`,
-          padding: 4,
-          textAlign: 'center',
-          cursor: 'pointer',
-          mb: 3,
-        }}
-      >
-        <input {...getInputProps()} />
-        <UploadFile sx={{ fontSize: 48, color: '#cccccc' }} />
-        <Typography>
-          Arraste e solte até 100 arquivos XML aqui, ou clique para selecionar
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Relatório de XMLs
         </Typography>
-      </Paper>
-      <List>
-        {files.map((file, i) => (
-          <ListItem
-            key={i}
-            secondaryAction={
-              <IconButton edge="end" onClick={() => removeFile(file)}>
-                <Delete />
-              </IconButton>
-            }
-          >
-            <ListItemText primary={file.name} />
-          </ListItem>
-        ))}</List>
 
-      {files.length > 0 && (
-        <Box sx={{ my: 2 }}>
-          <Button variant="contained" onClick={handleProcessXMLs}>
-            Processar XMLs
-          </Button>
-        </Box>
-      )}
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Grid item>
+            <Button variant="contained" color="success">Customizar Modelo</Button>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" color="success">Importar Modelo</Button>
+          </Grid>
+        </Grid>
 
-      {reportData.length > 0 && (
-        <>
-          <ReportTable 
-            data={paginatedData}
-            model={model} 
-            selectedColumns={selectedColumns} 
-            onRowClick={handleRowClick}
-          />
-          <Pagination 
-            count={Math.ceil(filteredData.length / resultsPerPage)}
-            page={currentPage}
-            onChange={(_, page) => setCurrentPage(page)}
-            sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}
-          />
-        </>
-      )}
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={6} md={4}>
+              <FormControl fullWidth>
+                  <InputLabel>Modelo</InputLabel>
+                  <Select value={model} label="Modelo" onChange={(e) => setModel(e.target.value)}>
+                      {Object.keys(modelConfig).map(modelName => (
+                        <MenuItem key={modelName} value={modelName}>{modelName}</MenuItem>
+                      ))}
+                  </Select>
+              </FormControl>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" onClick={() => setColumnSelectorOpen(true)}>Colunas</Button>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" onClick={handleExportExcel}>Exportar Excel</Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+               <TextField fullWidth label="Pesquisar" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+           </Grid>
+         </Grid>
 
-      <ColumnSelector
-        open={columnSelectorOpen}
-        columns={availableColumns}
-        selectedColumns={selectedColumns}
-        onClose={() => setColumnSelectorOpen(false)}
-        onApply={setSelectedColumns}
-      />
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Grid item>
+              <FormControl size="small">
+                  <Select value={resultsPerPage} onChange={(e) => setResultsPerPage(e.target.value as number)}>
+                      <MenuItem value={10}>10</MenuItem>
+                      <MenuItem value={25}>25</MenuItem>
+                      <MenuItem value={50}>50</MenuItem>
+                      <MenuItem value={100}>100</MenuItem>
+                  </Select>
+              </FormControl>
+          </Grid>
+          <Grid item>
+              <Typography variant="body2">resultados por página</Typography>
+          </Grid>
+        </Grid>
 
-      <NfeDetailModal
-        nfe={selectedNfe}
-        open={isModalOpen}
-        onClose={handleCloseModal}
-      />
-    </Box>
-  );
-}
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Colar Chaves de Acesso (uma por linha)"
+              multiline
+              rows={4}
+              value={accessKeys}
+              onChange={(e) => setAccessKeys(e.target.value)}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item>
+            <Button variant="contained" onClick={handleProcessAccessKeys}>
+              Processar Chaves
+            </Button>
+          </Grid>
+        </Grid>
+
+        <Paper
+          {
+...getRootProps()
+          }
+          sx={{
+            border: `2px dashed ${isDragActive ? '#1976d2' : '#cccccc'}`,
+            padding: 4,
+            textAlign: 'center',
+            cursor: 'pointer',
+            mb: 3,
+          }}
+        >
+          <input {...getInputProps()} />
+          <UploadFile sx={{ fontSize: 48, color: '#cccccc' }} />
+          <Typography>
+            Arraste e solte até 100 arquivos XML aqui, ou clique para selecionar
+          </Typography>
+        </Paper>
+        <List>
+          {files.map((file, i) => (
+            <ListItem
+              key={i}
+              secondaryAction={
+                <IconButton edge="end" onClick={() => removeFile(file)}>
+                  <Delete />
+                </IconButton>
+              }
+            >
+              <ListItemText primary={file.name} />
+            </ListItem>
+          ))}</List>
+
+        {files.length > 0 && (
+          <Box sx={{ my: 2 }}>
+            <Button variant="contained" onClick={handleProcessXMLs}>
+              Processar XMLs
+            </Button>
+          </Box>
+        )}
+
+        {reportData.length > 0 && (
+          <>
+            <ReportTable 
+              data={paginatedData}
+              model={model} 
+              selectedColumns={selectedColumns} 
+              onRowClick={handleRowClick}
+            />
+            <Pagination 
+              count={Math.ceil(filteredData.length / resultsPerPage)}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}
+            />
+          </>
+        )}
+
+        <ColumnSelector
+          open={columnSelectorOpen}
+          columns={availableColumns}
+          selectedColumns={selectedColumns}
+          onClose={() => setColumnSelectorOpen(false)}
+          onApply={setSelectedColumns}
+        />
+
+        <NfeDetailModal
+          nfe={selectedNfe}
+          open={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      </Box>
+    );
+  }

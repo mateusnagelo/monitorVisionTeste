@@ -133,7 +133,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
       <Box sx={style}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography id="nfe-detail-modal-title" variant="h5" component="h2">
-            Detalhes da NFe: {nfe.ide?.nNF}
+            Detalhes da NFe: {nfe.number}
           </Typography>
           <Button onClick={onClose} variant="outlined" color="secondary">Fechar</Button>
         </Box>
@@ -153,7 +153,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Chave de Acesso</Typography>
-                    <Typography color="text.secondary" sx={{ wordBreak: 'break-all' }}>{nfe.chaveDeAcesso}</Typography>
+                    <Typography color="text.secondary" sx={{ wordBreak: 'break-all' }}>{nfe.key}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -161,8 +161,8 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Emitente</Typography>
-                    <Typography><strong>Nome:</strong> {nfe.emit?.xNome}</Typography>
-                    <Typography><strong>CNPJ/CPF:</strong> {nfe.emit?.CNPJ}</Typography>
+                    <Typography><strong>Nome:</strong> {nfe.emitter.xNome}</Typography>
+                    <Typography><strong>CNPJ/CPF:</strong> {nfe.emitter.CNPJ}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -170,8 +170,8 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Destinatário</Typography>
-                    <Typography><strong>Nome:</strong> {nfe.dest?.xNome}</Typography>
-                    <Typography><strong>CNPJ/CPF:</strong> {nfe.dest?.CNPJ}</Typography>
+                    <Typography><strong>Nome:</strong> {nfe.receiver.xNome}</Typography>
+                    <Typography><strong>CNPJ/CPF:</strong> {nfe.receiver.CNPJ}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -179,7 +179,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Data de Emissão</Typography>
-                    <Typography>{nfe.ide?.dhEmi ? new Date(nfe.ide.dhEmi).toLocaleString() : 'N/A'}</Typography>
+                    <Typography>{nfe.emissionDate ? new Date(nfe.emissionDate).toLocaleString() : 'N/A'}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -187,7 +187,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Valor Total da Nota</Typography>
-                    <Typography variant="h5" color="primary">{formatCurrency(nfe.total?.ICMSTot?.vNF)}</Typography>
+                    <Typography variant="h5" color="primary">{formatCurrency(nfe.value)}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -206,9 +206,9 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {nfe.det && nfe.det.length > 0 ? (
-                    nfe.det.map((item, index) => (
-                      <ProductRow key={index} item={item} />
+                  {nfe.produtos && nfe.produtos.length > 0 ? (
+                    nfe.produtos.map((produto: any, index: number) => (
+                      <ProductRow key={index} item={produto} />
                     ))
                   ) : (
                     <TableRow>
