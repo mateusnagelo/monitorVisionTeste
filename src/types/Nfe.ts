@@ -101,11 +101,4 @@ export interface Nfe {
     };
     imposto: any;
   }[];
-  number: any;
-  key: any;
-  emitter: any;
-  receiver: any;
-  emissionDate: any;
-  value: any;
-  products: any;
 }

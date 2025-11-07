@@ -238,13 +238,13 @@ export default function XMLConverter() {
                 <TableBody>
                   {convertedFiles.map((file) => (
                     <TableRow
-                      key={file.data.chaveDeAcesso}
+                      key={file.data.chave}
                       sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                     >
                       <TableCell component="th" scope="row" sx={{ p: 1 }}>
                         NFe
                       </TableCell>
-                      <TableCell sx={{ p: 1 }}>{file.data.chaveDeAcesso}</TableCell>
+                      <TableCell sx={{ p: 1 }}>{file.data.chave}</TableCell>
                       <TableCell sx={{ p: 1 }}>{formatDate(file.data.ide.dhEmi)}</TableCell>
                       <TableCell sx={{ p: 1 }}>{file.data.emit.CNPJ}</TableCell>
                       <TableCell sx={{ p: 1 }}>{file.data.emit.enderEmit.UF}</TableCell>

@@ -29,8 +29,10 @@ interface ReportData {
   emissionDate: string;
   emitterCnpjCpf: string;
   emitter: string;
+  emitterStateRegistration: string;
   receiverCnpjCpf: string;
   receiver: string;
+  receiverStateRegistration: string;
   number: string;
   value: string;
   // Campos de produto achatados
@@ -64,13 +66,13 @@ export default function XMLReport() {
   const [nfeMap, setNfeMap] = useState<Map<string, Nfe>>(new Map());
 
   const modelConfig: { [key: string]: string[] } = {
-    'NFe Emitente/Destinatário': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitter', 'receiverCnpjCpf', 'receiver', 'number', 'value'],
+    'NFe Emitente/Destinatário': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitterStateRegistration', 'emitter', 'receiverCnpjCpf', 'receiverStateRegistration', 'receiver', 'number', 'value'],
     'NFe Emitente/Destinatário/Produtos': ['key', 'emissionDate', 'emitter', 'receiver', 'number', 'value', 'productCode', 'productName', 'productQuantity', 'productUnitValue'],
     'NFe Emitente/Destinatário/Produtos (ICMS)': ['key', 'number', 'productCode', 'productName', 'icmsOrig', 'icmsCST', 'icmsModBC', 'icmsVBC', 'icmsPICMS', 'icmsVICMS'],
-    'NFe Modelo Sem Produtos': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitter', 'receiverCnpjCpf', 'receiver', 'number', 'value'],
+    'NFe Modelo Sem Produtos': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitterStateRegistration', 'emitter', 'receiverCnpjCpf', 'receiverStateRegistration', 'receiver', 'number', 'value'],
     'NFe Modelo Com Produtos': ['key', 'emissionDate', 'emitter', 'receiver', 'number', 'value', 'productCode', 'productName', 'productQuantity', 'productUnitValue'],
-    'CTe Modelo Simples': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitter', 'receiverCnpjCpf', 'receiver', 'number', 'value'],
-    'CFe Modelo Sem Produtos (Teste)': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitter', 'receiverCnpjCpf', 'receiver', 'number', 'value'],
+    'CTe Modelo Simples': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitterStateRegistration', 'emitter', 'receiverCnpjCpf', 'receiverStateRegistration', 'receiver', 'number', 'value'],
+    'CFe Modelo Sem Produtos (Teste)': ['key', 'emissionDate', 'emitterCnpjCpf', 'emitterStateRegistration', 'emitter', 'receiverCnpjCpf', 'receiverStateRegistration', 'receiver', 'number', 'value'],
     'CFe Modelo Com Produtos (Teste)': ['key', 'emissionDate', 'emitter', 'receiver', 'number', 'value', 'productCode', 'productName', 'productQuantity', 'productUnitValue'],
   };
 
@@ -111,7 +113,8 @@ export default function XMLReport() {
           }
 
           const nfeData = await response.json();
-          const key = nfeData.chave;
+
+          const key = nfeData.chaveDeAcesso;
           if (key) {
             newNfeMap.set(key, nfeData as Nfe);
           }
@@ -131,18 +134,20 @@ export default function XMLReport() {
 
       const flattenedData: ReportData[] = parsedData.flatMap(nfe => {
         const baseData = {
-          key: nfe.chave,
-          emissionDate: nfe.emissionDate,
-          emitterCnpjCpf: nfe.emitter.cnpj,
-          emitter: nfe.emitter.name,
-          receiverCnpjCpf: nfe.receiver.cnpj,
-          receiver: nfe.receiver.name,
-          number: nfe.number,
-          value: nfe.value,
+          key: nfe.ide?.chNFe,
+          emissionDate: nfe.ide?.dhEmi,
+          emitterCnpjCpf: nfe.emit?.CNPJ || nfe.emit?.CPF,
+          emitter: nfe.emit?.xNome,
+          emitterStateRegistration: nfe.emit?.IE,
+          receiverCnpjCpf: nfe.dest?.CNPJ || nfe.dest?.CPF,
+          receiver: nfe.dest?.xNome,
+          receiverStateRegistration: nfe.dest?.IE,
+          number: nfe.ide?.nNF,
+          value: nfe.total?.ICMSTot?.vNF,
         };
 
-        if (nfe.produtos && nfe.produtos.length > 0) {
-          return nfe.produtos.map((product: any) => ({
+        if (nfe.det && nfe.det.length > 0) {
+          return nfe.det.map((product: any) => ({
             ...baseData,
             productCode: product.prod?.cProd,
             productName: product.prod?.xProd,
@@ -233,7 +238,7 @@ export default function XMLReport() {
 
       for (const key of keys) {
         try {
-          const response = await fetch(`/api/getNfeData?chave=${key}`);
+          const response = await fetch(`http://localhost:3001/api/getNfeData?chave=${key}`);
           const nfeData = await response.json();
 
           const baseData = {
@@ -242,8 +247,10 @@ export default function XMLReport() {
             emissionDate: nfeData.ide?.dhEmi,
             emitter: nfeData.emit?.xNome,
             emitterCnpjCpf: nfeData.emit?.CNPJ,
+            emitterStateRegistration: nfeData.emit?.IE,
             receiver: nfeData.dest?.xNome,
             receiverCnpjCpf: nfeData.dest?.CNPJ || nfeData.dest?.CPF,
+            receiverStateRegistration: nfeData.dest?.IE,
             value: nfeData.total?.ICMSTot?.vNF,
           };
 
@@ -280,8 +287,10 @@ export default function XMLReport() {
         key: 'Chave',
         emissionDate: 'Emissão',
         emitterCnpjCpf: 'Emitente CNPJ/CPF',
+        emitterStateRegistration: 'Emitente IE',
         emitter: 'Emitente',
         receiverCnpjCpf: 'Destinatário CNPJ/CPF',
+        receiverStateRegistration: 'Destinatário IE',
         receiver: 'Destinatário',
         number: 'Número',
         value: 'Valor',

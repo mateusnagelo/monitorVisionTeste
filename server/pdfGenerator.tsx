@@ -31,7 +31,7 @@ function parseXML(xmlContent: string) {
   const emit = xmlDoc.querySelector('emit');
   const emitData = {
     xNome: emit?.querySelector('xNome')?.textContent || '',
-    CNPJ: emit?.querySelector('CNPJ')?.textContent || '',
+    CNPJ: emit?.querySelector('CNPJ')?.textContent || emit?.querySelector('CPF')?.textContent || '',
     IE: emit?.querySelector('IE')?.textContent || '',
     IEST: emit?.querySelector('IEST')?.textContent || '',
     IM: emit?.querySelector('IM')?.textContent || '',
@@ -50,7 +50,7 @@ function parseXML(xmlContent: string) {
   const dest = xmlDoc.querySelector('dest');
   const destData = {
     xNome: dest?.querySelector('xNome')?.textContent || '',
-    CNPJ: dest?.querySelector('CNPJ')?.textContent || '',
+    CNPJ: dest?.querySelector('CNPJ')?.textContent || dest?.querySelector('CPF')?.textContent || '',
     enderDest: {
       xLgr: dest?.querySelector('xLgr')?.textContent || '',
       nro: dest?.querySelector('nro')?.textContent || '',

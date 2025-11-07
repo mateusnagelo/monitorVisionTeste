@@ -78,38 +78,33 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                       <Card>
                         <CardContent>
                           <Typography variant="subtitle1">ICMS</Typography>
-                          <Typography><strong>CST:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.CST}</Typography>
-                          <Typography><strong>Origem:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.orig}</Typography>
-                          <Typography><strong>Modalidade BC:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.modBC}</Typography>
-                          <Typography><strong>Alíquota:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.pICMS}%</Typography>
-                          <Typography><strong>Base de Cálculo:</strong> {formatCurrency(item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.vBC)}</Typography>
-                          <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.vICMS)}</Typography>
+                          <Typography><strong>CST:</strong> {item.imposto.ICMS.CST || item.imposto.ICMS.CSOSN}</Typography>
+                          <Typography><strong>Alíquota:</strong> {item.imposto.ICMS.pICMS}%</Typography>
+                          <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.ICMS.vICMS)}</Typography>
                         </CardContent>
                       </Card>
                     </Grid>
                   )}
                   {item.imposto && item.imposto.PIS && (
-                     <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={4}>
                       <Card>
                         <CardContent>
                           <Typography variant="subtitle1">PIS</Typography>
-                           <Typography><strong>CST:</strong> {item.imposto.PIS.CST}</Typography>
-                           <Typography><strong>Base de Cálculo:</strong> {formatCurrency(item.imposto.PIS.vBC)}</Typography>
-                           <Typography><strong>Alíquota:</strong> {item.imposto.PIS.pPIS}%</Typography>
-                           <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.PIS.vPIS)}</Typography>
+                          <Typography><strong>CST:</strong> {item.imposto.PIS.CST}</Typography>
+                          <Typography><strong>Alíquota:</strong> {item.imposto.PIS.pPIS}%</Typography>
+                          <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.PIS.vPIS)}</Typography>
                         </CardContent>
                       </Card>
                     </Grid>
                   )}
                   {item.imposto && item.imposto.COFINS && (
-                     <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={4}>
                       <Card>
                         <CardContent>
                           <Typography variant="subtitle1">COFINS</Typography>
-                           <Typography><strong>CST:</strong> {item.imposto.COFINS.CST}</Typography>
-                           <Typography><strong>Base de Cálculo:</strong> {formatCurrency(item.imposto.COFINS.vBC)}</Typography>
-                           <Typography><strong>Alíquota:</strong> {item.imposto.COFINS.pCOFINS}%</Typography>
-                           <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.COFINS.vCOFINS)}</Typography>
+                          <Typography><strong>CST:</strong> {item.imposto.COFINS.CST}</Typography>
+                          <Typography><strong>Alíquota:</strong> {item.imposto.COFINS.pCOFINS}%</Typography>
+                          <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.COFINS.vCOFINS)}</Typography>
                         </CardContent>
                       </Card>
                     </Grid>
@@ -133,7 +128,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
       <Box sx={style}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography id="nfe-detail-modal-title" variant="h5" component="h2">
-            Detalhes da NFe: {nfe.number}
+            Detalhes da NFe: {nfe.ide?.nNF}
           </Typography>
           <Button onClick={onClose} variant="outlined" color="secondary">Fechar</Button>
         </Box>
@@ -153,7 +148,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Chave de Acesso</Typography>
-                    <Typography color="text.secondary" sx={{ wordBreak: 'break-all' }}>{nfe.key}</Typography>
+                    <Typography color="text.secondary" sx={{ wordBreak: 'break-all' }}>{nfe.ide?.chNFe}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -161,8 +156,8 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Emitente</Typography>
-                    <Typography><strong>Nome:</strong> {nfe.emitter.xNome}</Typography>
-                    <Typography><strong>CNPJ/CPF:</strong> {nfe.emitter.CNPJ}</Typography>
+                    <Typography><strong>Nome:</strong> {nfe.emit?.xNome}</Typography>
+                    <Typography><strong>CNPJ/CPF:</strong> {nfe.emit?.CNPJ || nfe.emit?.CPF}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -170,8 +165,8 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Destinatário</Typography>
-                    <Typography><strong>Nome:</strong> {nfe.receiver.xNome}</Typography>
-                    <Typography><strong>CNPJ/CPF:</strong> {nfe.receiver.CNPJ}</Typography>
+                    <Typography><strong>Nome:</strong> {nfe.dest?.xNome}</Typography>
+                    <Typography><strong>CNPJ/CPF:</strong> {nfe.dest?.CNPJ || nfe.dest?.CPF}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -179,7 +174,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Data de Emissão</Typography>
-                    <Typography>{nfe.emissionDate ? new Date(nfe.emissionDate).toLocaleString() : 'N/A'}</Typography>
+                    <Typography>{nfe.ide?.dhEmi ? new Date(nfe.ide.dhEmi).toLocaleString() : 'N/A'}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -187,7 +182,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Valor Total da Nota</Typography>
-                    <Typography variant="h5" color="primary">{formatCurrency(nfe.value)}</Typography>
+                    <Typography variant="h5" color="primary">{formatCurrency(nfe.total?.ICMSTot?.vNF)}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -206,8 +201,8 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {nfe.produtos && nfe.produtos.length > 0 ? (
-                    nfe.produtos.map((produto: any, index: number) => (
+                  {nfe.det && nfe.det.length > 0 ? (
+                    nfe.det.map((produto: any, index: number) => (
                       <ProductRow key={index} item={produto} />
                     ))
                   ) : (
