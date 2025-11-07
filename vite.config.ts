@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:8888',
         changeOrigin: true,
       },
       '/ibpt-csv': {
@@ -23,10 +23,10 @@ export default defineConfig({
         rewrite: () => '/arquivos/b1b38f9f32e01ab6a20e81ffea020c54.csv',
       },
       '/cnpj': {
-        target: 'https://publica.cnpj.ws',
+        target: 'http://localhost:8888',
         changeOrigin: true,
         secure: true,
-        // sem rewrite necessário: /cnpj/XXXXXXXXXXXXXX -> https://publica.cnpj.ws/cnpj/XXXXXXXXXXXXXX
+        // sem rewrite necessário: /cnpj/XXXXXXXXXXXXXX -> http://localhost:8888/cnpj/XXXXXXXXXXXXXX
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
             console.log(`[proxy:/cnpj] → ${req.url}`)

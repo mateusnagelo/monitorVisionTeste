@@ -143,8 +143,4 @@ app.post('/api/nfe-data', async (req, res) => {
 
 import serverless from 'serverless-http';
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
-
-module.exports.handler = serverless(app);
+export const handler = serverless(app);
