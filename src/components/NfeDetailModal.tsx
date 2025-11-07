@@ -1,16 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Nfe } from '../types/Nfe';
+import { Modal, Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tabs, Tab, Grid, Card, CardContent, IconButton, Collapse } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 interface NfeDetailModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
   nfe: Nfe | null;
 }
 
-const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ isOpen, onClose, nfe }) => {
-  if (!isOpen || !nfe) {
+const style = {
+  position: 'absolute' as 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: '90%',
+  maxWidth: '1000px',
+  bgcolor: 'background.paper',
+  boxShadow: 24,
+  p: 4,
+  borderRadius: '8px',
+  maxHeight: '95vh',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) => {
+  const [tabIndex, setTabIndex] = useState(0);
+
+  if (!nfe) {
     return null;
   }
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabIndex(newValue);
+  };
 
   const formatCurrency = (value: string | number | undefined) => {
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -20,75 +45,252 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ isOpen, onClose, nfe })
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
   };
 
+  const ProductRow: React.FC<{ item: any }> = ({ item }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+      <React.Fragment>
+        <TableRow sx={{ '& > *': { borderBottom: 'unset' } }} hover>
+          <TableCell>
+            <IconButton
+              aria-label="expand row"
+              size="small"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            </IconButton>
+            {item.prod.xProd}
+          </TableCell>
+          <TableCell align="right">{item.prod.qCom}</TableCell>
+          <TableCell align="right">{formatCurrency(item.prod.vUnCom)}</TableCell>
+          <TableCell align="right">{formatCurrency(item.prod.vProd)}</TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <Box sx={{ margin: 1 }}>
+                <Typography variant="h6" gutterBottom component="div">
+                  Impostos do Produto
+                </Typography>
+                <Grid container spacing={2}>
+                  {item.imposto && item.imposto.ICMS && (
+                    <Grid item xs={12} md={4}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="subtitle1">ICMS</Typography>
+                          <Typography><strong>CST:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.CST}</Typography>
+                          <Typography><strong>Origem:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.orig}</Typography>
+                          <Typography><strong>Modalidade BC:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.modBC}</Typography>
+                          <Typography><strong>Alíquota:</strong> {item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.pICMS}%</Typography>
+                          <Typography><strong>Base de Cálculo:</strong> {formatCurrency(item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.vBC)}</Typography>
+                          <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.ICMS[Object.keys(item.imposto.ICMS)[0]]?.vICMS)}</Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                  {item.imposto && item.imposto.PIS && (
+                     <Grid item xs={12} md={4}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="subtitle1">PIS</Typography>
+                           <Typography><strong>CST:</strong> {item.imposto.PIS.CST}</Typography>
+                           <Typography><strong>Base de Cálculo:</strong> {formatCurrency(item.imposto.PIS.vBC)}</Typography>
+                           <Typography><strong>Alíquota:</strong> {item.imposto.PIS.pPIS}%</Typography>
+                           <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.PIS.vPIS)}</Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                  {item.imposto && item.imposto.COFINS && (
+                     <Grid item xs={12} md={4}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="subtitle1">COFINS</Typography>
+                           <Typography><strong>CST:</strong> {item.imposto.COFINS.CST}</Typography>
+                           <Typography><strong>Base de Cálculo:</strong> {formatCurrency(item.imposto.COFINS.vBC)}</Typography>
+                           <Typography><strong>Alíquota:</strong> {item.imposto.COFINS.pCOFINS}%</Typography>
+                           <Typography><strong>Valor:</strong> {formatCurrency(item.imposto.COFINS.vCOFINS)}</Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+            </Collapse>
+          </TableCell>
+        </TableRow>
+      </React.Fragment>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="my-modal">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
-        <div className="mt-3 text-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Detalhes da NFe: {nfe.number}</h3>
-          <div className="mt-2 px-7 py-3">
-            <div className="text-left">
-              <p><strong>Chave:</strong> {nfe.key}</p>
-              <p><strong>Emitente:</strong> {nfe.emitter?.name}</p>
-              <p><strong>CNPJ/CPF Emitente:</strong> {nfe.emitter?.cnpjCpf}</p>
-              <p><strong>Destinatário:</strong> {nfe.receiver?.name}</p>
-              <p><strong>CNPJ/CPF Destinatário:</strong> {nfe.receiver?.cnpjCpf}</p>
-              <p><strong>Emissão:</strong> {nfe.emissionDate ? new Date(nfe.emissionDate).toLocaleString() : 'N/A'}</p>
-              <p><strong>Valor Total:</strong> {formatCurrency(nfe.value)}</p>
-            </div>
-            <h4 className="text-md font-medium text-gray-900 mt-4">Produtos</h4>
-            <div className="max-h-60 overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200 mt-2">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Produto
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Qtd.
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valor Unit.
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valor Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {nfe.products && nfe.products.length > 0 ? (
-                    nfe.products.map((produto, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{produto.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{produto.quantity}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatCurrency(produto.unitValue)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatCurrency(produto.totalValue)}
-                        </td>
-                      </tr>
+    <Modal
+      open={open}
+      onClose={onClose}
+      aria-labelledby="nfe-detail-modal-title"
+      aria-describedby="nfe-detail-modal-description"
+    >
+      <Box sx={style}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography id="nfe-detail-modal-title" variant="h5" component="h2">
+            Detalhes da NFe: {nfe.ide?.nNF}
+          </Typography>
+          <Button onClick={onClose} variant="outlined" color="secondary">Fechar</Button>
+        </Box>
+
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
+          <Tabs value={tabIndex} onChange={handleTabChange} aria-label="NFe details tabs">
+            <Tab label="Informações Gerais" />
+            <Tab label="Produtos" />
+            <Tab label="Totais de Impostos" />
+          </Tabs>
+        </Box>
+
+        <Box sx={{ overflowY: 'auto', flexGrow: 1, p: 1, mt: 2 }}>
+          {tabIndex === 0 && (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Chave de Acesso</Typography>
+                    <Typography color="text.secondary" sx={{ wordBreak: 'break-all' }}>{nfe.chaveDeAcesso}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Emitente</Typography>
+                    <Typography><strong>Nome:</strong> {nfe.emit?.xNome}</Typography>
+                    <Typography><strong>CNPJ/CPF:</strong> {nfe.emit?.CNPJ}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Destinatário</Typography>
+                    <Typography><strong>Nome:</strong> {nfe.dest?.xNome}</Typography>
+                    <Typography><strong>CNPJ/CPF:</strong> {nfe.dest?.CNPJ}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={6} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Data de Emissão</Typography>
+                    <Typography>{nfe.ide?.dhEmi ? new Date(nfe.ide.dhEmi).toLocaleString() : 'N/A'}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={6} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Valor Total da Nota</Typography>
+                    <Typography variant="h5" color="primary">{formatCurrency(nfe.total?.ICMSTot?.vNF)}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          )}
+
+          {tabIndex === 1 && (
+            <TableContainer component={Paper} sx={{ maxHeight: 'calc(95vh - 250px)' }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Produto</TableCell>
+                    <TableCell align="right">Qtd.</TableCell>
+                    <TableCell align="right">Valor Unit.</TableCell>
+                    <TableCell align="right">Valor Total</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {nfe.det && nfe.det.length > 0 ? (
+                    nfe.det.map((item, index) => (
+                      <ProductRow key={index} item={item} />
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan={4} className="text-center py-4">Nenhum produto encontrado.</td>
-                    </tr>
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">Nenhum produto encontrado.</TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="items-center px-4 py-3">
-            <button
-              id="ok-btn"
-              className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              onClick={onClose}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          {tabIndex === 2 && (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Totais de Impostos</Typography>
+                {nfe.total?.ICMSTot && (
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Base de Cálculo ICMS:</strong> {formatCurrency(nfe.total.ICMSTot.vBC)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do ICMS:</strong> {formatCurrency(nfe.total.ICMSTot.vICMS)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>ICMS Desonerado:</strong> {formatCurrency(nfe.total.ICMSTot.vICMSDeson)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Fundo de Combate à Pobreza (FCP):</strong> {formatCurrency(nfe.total.ICMSTot.vFCP)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Base de Cálculo ICMS ST:</strong> {formatCurrency(nfe.total.ICMSTot.vBCST)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do ICMS ST:</strong> {formatCurrency(nfe.total.ICMSTot.vST)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>FCP ST:</strong> {formatCurrency(nfe.total.ICMSTot.vFCPST)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>FCP ST Retido:</strong> {formatCurrency(nfe.total.ICMSTot.vFCPSTRet)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor Total dos Produtos:</strong> {formatCurrency(nfe.total.ICMSTot.vProd)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do Frete:</strong> {formatCurrency(nfe.total.ICMSTot.vFrete)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do Seguro:</strong> {formatCurrency(nfe.total.ICMSTot.vSeg)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do Desconto:</strong> {formatCurrency(nfe.total.ICMSTot.vDesc)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do II:</strong> {formatCurrency(nfe.total.ICMSTot.vII)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do IPI:</strong> {formatCurrency(nfe.total.ICMSTot.vIPI)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>IPI Devolvido:</strong> {formatCurrency(nfe.total.ICMSTot.vIPIDevol)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor do PIS:</strong> {formatCurrency(nfe.total.ICMSTot.vPIS)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor da COFINS:</strong> {formatCurrency(nfe.total.ICMSTot.vCOFINS)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Outras Despesas:</strong> {formatCurrency(nfe.total.ICMSTot.vOutro)}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography><strong>Valor Total da Nota:</strong> {formatCurrency(nfe.total.ICMSTot.vNF)}</Typography>
+                    </Grid>
+                  </Grid>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </Box>
+      </Box>
+    </Modal>
   );
 };
 

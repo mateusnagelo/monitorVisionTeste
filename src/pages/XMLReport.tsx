@@ -18,7 +18,6 @@ import {
 import { useDropzone } from 'react-dropzone'
 import { UploadFile, Delete } from '@mui/icons-material'
 import { useState, useCallback, useEffect } from 'react'
-import { parseXML } from '../utils/xmlParser'
 import ReportTable from '../components/ReportTable'
 import { exportToExcel } from '../utils/exportToExcel'
 import ColumnSelector from '../components/ColumnSelector'
@@ -92,44 +91,69 @@ export default function XMLReport() {
   const handleProcessXMLs = useCallback(async () => {
     try {
       const newNfeMap = new Map<string, Nfe>();
-      const parsedData = await Promise.all(
-        files.map(async (file) => {
+      const parsedDataPromises = files.map(async (file) => {
+        try {
           const xmlText = await file.text();
-          const nfeData = await parseXML(xmlText);
-          if (nfeData && nfeData.key) {
-            newNfeMap.set(nfeData.key, nfeData);
+          const response = await fetch('http://localhost:3001/api/process-xml', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/xml',
+            },
+            body: xmlText,
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.text();
+            const errorMessage = `Falha ao processar o arquivo: ${file.name}. ${errorBody}`;
+            console.error(errorMessage);
+            alert(errorMessage);
+            return null;
+          }
+
+          const nfeData = await response.json();
+          const key = nfeData.chaveDeAcesso;
+          if (key) {
+            newNfeMap.set(key, nfeData as Nfe);
           }
           return nfeData;
-        })
-      );
+
+        } catch (error) {
+          const errorMessage = `Erro ao processar o arquivo ${file.name}.`;
+          console.error(errorMessage, error);
+          alert(`${errorMessage} Verifique o console.`);
+          return null;
+        }
+      });
+
+      const parsedData = (await Promise.all(parsedDataPromises)).filter(Boolean);
 
       setNfeMap(newNfeMap);
 
-      const flattenedData: ReportData[] = parsedData.filter(Boolean).flatMap(nfeData => {
+      const flattenedData: ReportData[] = parsedData.flatMap(nfeData => {
         const baseData = {
-          key: nfeData.key,
-          emissionDate: nfeData.emissionDate,
-          emitterCnpjCpf: nfeData.emitter.cnpjCpf,
-          emitter: nfeData.emitter.name,
-          receiverCnpjCpf: nfeData.receiver.cnpjCpf,
-          receiver: nfeData.receiver.name,
-          number: nfeData.number,
-          value: nfeData.value,
+          key: nfeData.chaveDeAcesso,
+          emissionDate: nfeData.ide?.dhEmi,
+          emitterCnpjCpf: nfeData.emit?.CNPJ,
+          emitter: nfeData.emit?.xNome,
+          receiverCnpjCpf: nfeData.dest?.CNPJ,
+          receiver: nfeData.dest?.xNome,
+          number: nfeData.ide?.nNF,
+          value: nfeData.total?.ICMSTot?.vNF,
         };
 
-        if (nfeData.products && nfeData.products.length > 0) {
-          return nfeData.products.map(product => ({
+        if (nfeData.det && nfeData.det.length > 0) {
+          return nfeData.det.map((item: any) => ({
             ...baseData,
-            productCode: product.code,
-            productName: product.name,
-            productQuantity: product.quantity,
-            productUnitValue: product.unitValue,
-            icmsOrig: product.icms?.orig,
-            icmsCST: product.icms?.CST,
-            icmsModBC: product.icms?.modBC,
-            icmsVBC: product.icms?.vBC,
-            icmsPICMS: product.icms?.pICMS,
-            icmsVICMS: product.icms?.vICMS,
+            productCode: item.prod?.cProd,
+            productName: item.prod?.xProd,
+            productQuantity: item.prod?.qCom,
+            productUnitValue: item.prod?.vUnCom,
+            icmsOrig: item.imposto?.ICMS?.CSOSN || item.imposto?.ICMS?.CST,
+            icmsCST: item.imposto?.ICMS?.CST || item.imposto?.ICMS?.CSOSN,
+            icmsModBC: item.imposto?.ICMS?.modBC,
+            icmsVBC: item.imposto?.ICMS?.vBC,
+            icmsPICMS: item.imposto?.ICMS?.pICMS,
+            icmsVICMS: item.imposto?.ICMS?.vICMS,
           }));
         } else {
           return [baseData];
@@ -174,8 +198,28 @@ export default function XMLReport() {
 
   const handleRowClick = (row: ReportData) => {
     const foundNfe = nfeMap.get(row.key);
-    setSelectedNfe(foundNfe || null);
-    setIsModalOpen(true);
+    if (foundNfe) {
+      setSelectedNfe(foundNfe);
+      setIsModalOpen(true);
+    } else {
+      console.error("NFe não encontrada no mapa para a chave:", row.key);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedNfe(null);
+  };
+
+  const handleExport = () => {
+    const dataToExport = reportData.map(row => {
+      const newRow: { [key: string]: any } = {};
+      selectedColumns.forEach(col => {
+        newRow[col] = row[col as keyof typeof row];
+      });
+      return newRow;
+    });
+    exportToExcel(dataToExport, 'relatorio_nfe', 'Relatório NFe');
   };
 
   const handleProcessAccessKeys = async () => {
@@ -424,11 +468,11 @@ export default function XMLReport() {
         onApply={setSelectedColumns}
       />
 
-      <NfeDetailModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+      <NfeDetailModal
         nfe={selectedNfe}
+        open={isModalOpen}
+        onClose={handleCloseModal}
       />
-     </Box>
-   );
- }
+    </Box>
+  );
+}

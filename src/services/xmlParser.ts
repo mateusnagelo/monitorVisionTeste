@@ -200,7 +200,9 @@ export const parseNFe = (xmlDoc: XMLDocument): NFeData | null => {
     const ipi = getElement(imposto, 'IPI');
     const ipiChild = ipi ? getElement(ipi, (ipi.firstElementChild?.tagName || 'IPITrib')) : null;
     const pis = getElement(imposto, 'PIS');
+    const pisChild = pis ? getElement(pis, (pis.firstElementChild?.tagName || 'PISNT')) : null;
     const cofins = getElement(imposto, 'COFINS');
+    const cofinsChild = cofins ? getElement(cofins, (cofins.firstElementChild?.tagName || 'COFINSNT')) : null;
 
     return {
       nItem: d.getAttribute('nItem'),
@@ -239,16 +241,16 @@ export const parseNFe = (xmlDoc: XMLDocument): NFeData | null => {
           vIPI: getValue(ipiChild, 'vIPI'),
         },
         PIS: {
-          CST: getValue(pis, 'CST'),
-          vBC: getValue(pis, 'vBC'),
-          pPIS: getValue(pis, 'pPIS'),
-          vPIS: getValue(pis, 'vPIS'),
+          CST: getValue(pisChild, 'CST'),
+          vBC: getValue(pisChild, 'vBC'),
+          pPIS: getValue(pisChild, 'pPIS'),
+          vPIS: getValue(pisChild, 'vPIS'),
         },
         COFINS: {
-          CST: getValue(cofins, 'CST'),
-          vBC: getValue(cofins, 'vBC'),
-          pCOFINS: getValue(cofins, 'pCOFINS'),
-          vCOFINS: getValue(cofins, 'vCOFINS'),
+          CST: getValue(cofinsChild, 'CST'),
+          vBC: getValue(cofinsChild, 'vBC'),
+          pCOFINS: getValue(cofinsChild, 'pCOFINS'),
+          vCOFINS: getValue(cofinsChild, 'vCOFINS'),
         },
       },
     };

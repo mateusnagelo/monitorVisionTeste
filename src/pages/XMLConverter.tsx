@@ -83,7 +83,7 @@ export default function XMLConverter() {
     for (const file of files) {
       try {
         const xmlString = await file.text();
-        const response = await fetch('http://localhost:3001/generate-pdf', {
+        const response = await fetch('http://localhost:3001/api/process-xml', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/xml',
