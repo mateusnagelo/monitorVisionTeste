@@ -3,7 +3,7 @@ export interface Nfe {
   versao: string;
   protNFe?: {
     infProt: {
-      chAcesso: string;
+      chNFe: string;
     };
   };
   ide: {

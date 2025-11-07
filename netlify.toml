@@ -1,7 +1,13 @@
 [build]
-  command = "npm run build && (cd server && npm install --legacy-peer-deps && npm run build)"
+  functions = "server/functions"
   publish = "dist"
-  functions = "server/dist"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+  publish = "dist"
+  framework = "#custom"
+  functions = "server/functions"
 
 [[redirects]]
   from = "/api/*"

@@ -96,7 +96,7 @@ export default function XMLReport() {
       const parsedDataPromises = files.map(async (file) => {
         try {
           const xmlText = await file.text();
-          const response = await fetch('http://localhost:3001/api/process-xml', {
+          const response = await fetch('/api/process-xml', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/xml',
@@ -114,7 +114,7 @@ export default function XMLReport() {
 
           const nfeData = await response.json();
 
-          const key = nfeData.chaveDeAcesso;
+          const key = nfeData.chave;
           if (key) {
             newNfeMap.set(key, nfeData as Nfe);
           }
@@ -134,7 +134,7 @@ export default function XMLReport() {
 
       const flattenedData: ReportData[] = parsedData.flatMap(nfe => {
         const baseData = {
-          key: nfe.ide?.chNFe,
+          key: nfe.chave,
           emissionDate: nfe.ide?.dhEmi,
           emitterCnpjCpf: nfe.emit?.CNPJ || nfe.emit?.CPF,
           emitter: nfe.emit?.xNome,
@@ -188,7 +188,7 @@ export default function XMLReport() {
     if (!model.includes('Produtos')) {
       const uniqueData = new Map<string, ReportData>();
       fullReportData.forEach(item => {
-        if (!uniqueData.has(item.key)) {
+        if (item.key && !uniqueData.has(item.key)) {
           uniqueData.set(item.key, item);
         }
       });
@@ -238,7 +238,7 @@ export default function XMLReport() {
 
       for (const key of keys) {
         try {
-          const response = await fetch(`http://localhost:3001/api/getNfeData?chave=${key}`);
+          const response = await fetch(`/api/getNfeData?chave=${key}`);
           const nfeData = await response.json();
 
           const baseData = {

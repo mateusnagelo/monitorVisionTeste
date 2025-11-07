@@ -57,13 +57,7 @@ function extractFields(raw: any) {
     typeof dataSituacaoRaw === 'string' ? dataSituacaoRaw : (dataSituacaoRaw?.data ?? dataSituacaoRaw?.date ?? '')
 
   const simplesRaw = raw?.simples ?? est?.simples
-  const simplesStatus = typeof simplesRaw === 'string' ? simplesRaw : (simplesRaw?.situacao ?? simplesRaw?.status ?? '')
-  const meiRaw = raw?.mei ?? est?.mei
-  const meiStatus = typeof meiRaw === 'string' ? meiRaw : (meiRaw?.situacao ?? meiRaw?.status ?? '')
-  const regimeTributario = raw?.regime_tributario ?? est?.regime_tributario ?? [
-    simplesStatus && `Simples Nacional: ${simplesStatus}`,
-    meiStatus && `MEI: ${meiStatus}`,
-  ].filter(Boolean).join(' | ')
+  const regimeTributario = simplesRaw && simplesRaw.simples !== 'N' ? 'Simples Nacional' : 'Não informado'
 
   const ies = est?.inscricoes_estaduais ?? raw?.inscricoes_estaduais
   let inscricaoEstadual = est?.inscricao_estadual ?? raw?.inscricao_estadual ?? ''
@@ -76,6 +70,9 @@ function extractFields(raw: any) {
     inscricaoEstadual = preferred?.inscricao_estadual ?? preferred?.inscricao ?? inscricaoEstadual
   }
 
+  const porteRaw = raw?.porte
+  const porte = typeof porteRaw === 'string' ? porteRaw : (porteRaw?.descricao ?? porteRaw?.nome ?? '')
+
   return {
     cnpj: String(raw?.cnpj ?? est?.cnpj ?? raw?.CNPJ ?? raw?.document ?? raw?.id ?? ''),
     nome: raw?.razao_social ?? raw?.nome ?? raw?.name ?? '',
@@ -84,9 +81,11 @@ function extractFields(raw: any) {
     situacao,
     dataSituacaoCadastral,
     natureza,
+    porte,
     regimeTributario,
     cnae,
     inscricaoEstadual,
+    telefone: est?.ddd1 && est?.telefone1 ? `(${est.ddd1}) ${est.telefone1}` : (raw?.telefone ?? ''),
     endereco: {
       logradouro: est?.logradouro ?? raw?.logradouro ?? raw?.street ?? '',
       numero: est?.numero ?? raw?.numero ?? raw?.number ?? '',
@@ -94,7 +93,7 @@ function extractFields(raw: any) {
       bairro: est?.bairro ?? raw?.bairro ?? raw?.district ?? '',
       cep: est?.cep ?? raw?.cep ?? raw?.postal_code ?? raw?.zip ?? '',
       municipio,
-      uf,
+      uf
     }
   }
 }
@@ -133,6 +132,44 @@ function appendLog(entry: { timestamp: string; cnpj: string; empresa: string | n
   try {
     localStorage.setItem(key, JSON.stringify(list))
   } catch {}
+}
+
+function saveClientLocally(fields: any) {
+  if (!fields?.cnpj) return;
+
+  const key = 'clients';
+  let list: any[] = [];
+  try {
+    const raw = localStorage.getItem(key);
+    list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) list = [];
+  } catch {
+    list = [];
+  }
+
+  const clientToSave = {
+    cnpj: fields.cnpj,
+    nome: fields.nome,
+    fantasia: fields.fantasia,
+    inscricaoEstadual: fields.inscricaoEstadual,
+    regimeTributario: fields.regimeTributario,
+    situacao: fields.situacao,
+    municipio: fields.endereco?.municipio || '',
+    uf: fields.endereco?.uf || '',
+    telefone: fields.telefone,
+  };
+
+  const index = list.findIndex((c) => String(c?.cnpj) === String(clientToSave.cnpj));
+
+  if (index !== -1) {
+    // Update existing client
+    list[index] = { ...list[index], ...clientToSave, atualizadoEm: new Date().toISOString() };
+  } else {
+    // Add new client
+    list.push({ ...clientToSave, criadoEm: new Date().toISOString() });
+  }
+
+  localStorage.setItem(key, JSON.stringify(list));
 }
 
 async function generatePdf(raw: any, digits: string) {
@@ -177,10 +214,10 @@ async function generatePdf(raw: any, digits: string) {
     ['Abertura', fields.abertura || '-'],
     ['Natureza Jurídica', fields.natureza || '-'],
     ['CNAE Principal', fields.cnae || '-'],
-    ['Endereço', `${fields.endereco.logradouro || ''}, ${fields.endereco.numero || ''} ${fields.endereco.complemento || ''}`.trim()],
-    ['Bairro', fields.endereco.bairro || '-'],
-    ['Município/UF', `${fields.endereco.municipio || ''}/${fields.endereco.uf || ''}`.replace(/^\/$/, '-')],
-    ['CEP', fields.endereco.cep || '-'],
+    ['Endereço', `${fields.endereco?.logradouro || ''}, ${fields.endereco?.numero || ''} ${fields.endereco?.complemento || ''}`.trim()],
+    ['Bairro', fields.endereco?.bairro || '-'],
+    ['Município/UF', `${fields.endereco?.municipio || ''}/${fields.endereco?.uf || ''}`.replace(/^\/$/, '-')],
+    ['CEP', fields.endereco?.cep || '-'],
   ]
 
   const lineHeight = 16
@@ -289,9 +326,11 @@ export default function CNPJLookup() {
     try {
       const result = await fetchCNPJ(config.cnpjApiBase, digits)
       setData(result)
+
+      const f = extractFields(result)
+      saveClientLocally(f);
       // Logar sucesso
       const { computer, ip } = await getMachineInfo()
-      const f = extractFields(result)
       const entry = { timestamp: new Date().toISOString(), cnpj: digits, empresa: f?.nome || f?.fantasia || null, computer, ip, success: true, error: null }
       try {
         if (config.firebaseEnabled && (config.firebaseConfig as any)?.apiKey) {
@@ -324,50 +363,6 @@ export default function CNPJLookup() {
     }
   }
 
-  const handleRegisterClient = async () => {
-    if (!data) return
-    const f = extractFields(data)
-    const key = 'clients'
-    let list: any[] = []
-    try {
-      list = JSON.parse(localStorage.getItem(key) || '[]')
-      if (!Array.isArray(list)) list = []
-    } catch { list = [] }
-
-    const exists = list.some((c) => String(c?.cnpj) === String(f.cnpj))
-    if (exists && !config.firebaseEnabled) {
-      setSnack({ open: true, message: 'Cliente já cadastrado para este CNPJ.', severity: 'warning' })
-      return
-    }
-
-    const client = {
-      cnpj: f.cnpj,
-      nome: f.nome,
-      fantasia: f.fantasia,
-      inscricaoEstadual: f.inscricaoEstadual,
-      regimeTributario: f.regimeTributario,
-      situacao: f.situacao,
-      dataSituacaoCadastral: f.dataSituacaoCadastral,
-      municipio: f.endereco.municipio,
-      uf: f.endereco.uf,
-      criadoEm: new Date().toISOString(),
-    }
-
-    if (config.firebaseEnabled && (config.firebaseConfig as any)?.apiKey) {
-      try { getFirebase() } catch { initFirebase(config.firebaseConfig as any) }
-      try {
-        await saveClientToFirestore(client)
-        setSnack({ open: true, message: 'Cliente cadastrado com sucesso!', severity: 'success' })
-      } catch {
-        setSnack({ open: true, message: 'Falha ao cadastrar cliente no Firebase.', severity: 'error' })
-      }
-      return
-    }
-
-    list.push(client)
-    localStorage.setItem(key, JSON.stringify(list))
-    setSnack({ open: true, message: 'Cliente cadastrado com sucesso!', severity: 'success' })
-  }
 
   const digits = formatCNPJ(cnpj)
   const f = data ? extractFields(data) : null
@@ -414,7 +409,7 @@ export default function CNPJLookup() {
               <Stack direction="row" spacing={1}>
                 <Button variant="outlined" startIcon={<PictureAsPdfIcon />} onClick={() => generatePdf(data, digits)}>Salvar PDF</Button>
                 <Button variant="contained" color="success" startIcon={<WhatsAppIcon />} onClick={() => shareViaWhatsApp(data, digits)}>Enviar via WhatsApp</Button>
-                <Button variant="contained" color="primary" onClick={handleRegisterClient}>Cadastrar Cliente</Button>
+
               </Stack>
             </Stack>
 
@@ -440,16 +435,38 @@ export default function CNPJLookup() {
 
             <Stack spacing={1} direction={{ xs: 'column', sm: 'row' }}>
               <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">Abertura</Typography>
+                <Typography variant="body1" component="strong" fontWeight={700}>{f?.abertura || '-'}</Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">Porte</Typography>
+                <Typography variant="body1" component="strong" fontWeight={700}>{f?.porte || '-'}</Typography>
+              </Box>
+            </Stack>
+
+            <Divider sx={{ my: 1.5 }} />
+
+            <Stack spacing={1} direction={{ xs: 'column', sm: 'row' }}>
+              <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle2" color="success.main">Situação</Typography>
                 <Typography variant="body1" component="strong" fontWeight={700}>{f?.situacao || '-'}</Typography>
               </Box>
               <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle2" color="warning.main">Situação Cadastral</Typography>
-                <Typography variant="body1" component="strong" fontWeight={700}>{f?.situacao || '-'}</Typography>
+                <Typography variant="subtitle2" color="warning.main">Data da Situação</Typography>
+                <Typography variant="body1" component="strong" fontWeight={700}>{f?.dataSituacaoCadastral || '-'}</Typography>
+              </Box>
+            </Stack>
+
+            <Divider sx={{ my: 1.5 }} />
+
+            <Stack spacing={1} direction={{ xs: 'column', sm: 'row' }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">Natureza Jurídica</Typography>
+                <Typography variant="body1" component="strong" fontWeight={700}>{f?.natureza || '-'}</Typography>
               </Box>
               <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle2" color="warning.main">Data da Situação Cadastral</Typography>
-                <Typography variant="body1" component="strong" fontWeight={700}>{f?.dataSituacaoCadastral || '-'}</Typography>
+                <Typography variant="subtitle2" color="text.secondary">CNAE Principal</Typography>
+                <Typography variant="body1" component="strong" fontWeight={700}>{f?.cnae || '-'}</Typography>
               </Box>
             </Stack>
 
@@ -465,13 +482,25 @@ export default function CNPJLookup() {
                 <Typography variant="body1" component="strong" fontWeight={700}>{f?.regimeTributario || '-'}</Typography>
               </Box>
             </Stack>
+            <Divider sx={{ my: 1.5 }} />
+
+            <Stack spacing={1} direction={{ xs: 'column', sm: 'row' }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">Telefone</Typography>
+                <Typography variant="body1" component="strong" fontWeight={700}>{f?.telefone || '-'}</Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">Complemento</Typography>
+                <Typography variant="body1" component="strong" fontWeight={700}>{f?.endereco?.complemento || '-'}</Typography>
+              </Box>
+            </Stack>
 
             <Divider sx={{ my: 1.5 }} />
 
             <Stack spacing={0.5}>
               <Typography variant="subtitle2" color="primary.main">Endereço</Typography>
-              <Typography variant="body1" component="strong" fontWeight={700}>{`${f?.endereco.logradouro || ''}, ${f?.endereco.numero || ''} ${f?.endereco.complemento || ''}`.trim()}</Typography>
-              <Typography variant="body2" color="text.secondary">{`${f?.endereco.bairro || ''} - ${f?.endereco.municipio || ''}/${f?.endereco.uf || ''} - CEP ${f?.endereco.cep || ''}`}</Typography>
+              <Typography variant="body1" component="strong" fontWeight={700}>{`${f?.endereco?.logradouro || ''}, ${f?.endereco?.numero || ''} ${f?.endereco?.complemento || ''}`.trim()}</Typography>
+              <Typography variant="body2" color="text.secondary">{`${f?.endereco?.bairro || ''} - ${f?.endereco?.municipio || ''}/${f?.endereco?.uf || ''} - CEP ${f?.endereco?.cep || ''}`}</Typography>
             </Stack>
           </Stack>
         </Paper>

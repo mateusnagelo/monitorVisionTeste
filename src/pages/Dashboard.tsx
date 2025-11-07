@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Grid, LinearProgress, Stack, Typography, Button } from '@mui/material';
+import { Box, Grid, LinearProgress, Stack, Typography, Button, Card, CardContent, CardActions, CardHeader } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -71,7 +70,7 @@ export default function Dashboard() {
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography variant="h4" fontWeight="bold" className="gradient-text">Dashboard de Atividades</Typography>
+        <Typography variant="h4" fontWeight="bold">Dashboard de Atividades</Typography>
         <Typography variant="body1" color="text.secondary">
           Visão geral das operações recentes no sistema.
         </Typography>
@@ -79,17 +78,13 @@ export default function Dashboard() {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardHeader>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <CloudDownloadIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-                <Box>
-                  <CardTitle>Downloads IBPT</CardTitle>
-                  <CardDescription>Tabelas de impostos</CardDescription>
-                </Box>
-              </Stack>
-            </CardHeader>
-            <CardContent>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardHeader
+              avatar={<CloudDownloadIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
+              title="Downloads IBPT"
+              subheader="Tabelas de impostos"
+            />
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography variant="h3" fontWeight="bold">{metrics.totalDownloads}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>downloads totais</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -104,24 +99,20 @@ export default function Dashboard() {
                 Último: {metrics.lastDownload ? `${metrics.lastDownload?.filename ?? 'arquivo.csv'} (${new Date(metrics.lastDownload.timestamp).toLocaleDateString()})` : 'N/A'}
               </Typography>
             </CardContent>
-            <CardFooter>
+            <CardActions>
               <Button fullWidth variant="contained" onClick={() => navigate('/ibptax')}>Ver Detalhes</Button>
-            </CardFooter>
+            </CardActions>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardHeader>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <BugReportIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-                <Box>
-                  <CardTitle>Consultas CNPJ</CardTitle>
-                  <CardDescription>Buscas de clientes</CardDescription>
-                </Box>
-              </Stack>
-            </CardHeader>
-            <CardContent>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardHeader
+              avatar={<BugReportIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
+              title="Consultas CNPJ"
+              subheader="Buscas de clientes"
+            />
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography variant="h3" fontWeight="bold">{metrics.totalQueries}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>consultas totais</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -136,24 +127,20 @@ export default function Dashboard() {
                 Última: {metrics.lastQuery ? `${metrics.lastQuery.cnpj} (${new Date(metrics.lastQuery.timestamp).toLocaleDateString()})` : 'N/A'}
               </Typography>
             </CardContent>
-            <CardFooter>
+            <CardActions>
               <Button fullWidth variant="contained" onClick={() => navigate('/cnpj')}>Nova Consulta</Button>
-            </CardFooter>
+            </CardActions>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardHeader>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <FactCheckIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-                <Box>
-                  <CardTitle>Validações XML</CardTitle>
-                  <CardDescription>Verificação de NF-e</CardDescription>
-                </Box>
-              </Stack>
-            </CardHeader>
-            <CardContent>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardHeader
+              avatar={<FactCheckIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
+              title="Validações XML"
+              subheader="Verificação de NF-e"
+            />
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography variant="h3" fontWeight="bold">{metrics.totalValidations}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>validações totais</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -168,9 +155,9 @@ export default function Dashboard() {
                 Última: {metrics.lastValidation ? `${metrics.lastValidation?.filename ?? 'XML'} (${new Date(metrics.lastValidation.timestamp).toLocaleDateString()})` : 'N/A'}
               </Typography>
             </CardContent>
-            <CardFooter>
+            <CardActions>
               <Button fullWidth variant="contained" onClick={() => navigate('/xml')}>Validar XML</Button>
-            </CardFooter>
+            </CardActions>
           </Card>
         </Grid>
       </Grid>

@@ -156,6 +156,16 @@ export default function AppLayout({ mode, onToggleMode }: AppLayoutProps) {
             </NavLink>
           ))}
         </List>
+        <Box sx={{ flexGrow: 1 }} />
+        <Divider />
+        <Box sx={{ p: 2, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            vr1.1.1
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Desenvolvido por VisionApp by Mateus Angelo
+          </Typography>
+        </Box>
       </Drawer>
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
