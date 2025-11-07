@@ -51,7 +51,7 @@ app.post('/api/process-xml', async (req, res) => {
 
     // Salva um log no banco de dados
     try {
-      const logMessage = `XML da chave ${nfeData.chaveAcesso} processado com sucesso.`;
+      const logMessage = `XML da chave ${nfeData.chaveDeAcesso} processado com sucesso.`;
       await pool.query('INSERT INTO logs (message) VALUES ($1)', [logMessage]);
       console.log('[server] Log salvo no banco de dados.');
     } catch (dbError) {
