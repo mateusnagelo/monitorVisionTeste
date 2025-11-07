@@ -148,7 +148,7 @@ const NfeDetailModal: React.FC<NfeDetailModalProps> = ({ open, onClose, nfe }) =
                 <Card>
                   <CardContent>
                     <Typography variant="h6">Chave de Acesso</Typography>
-                    <Typography color="text.secondary" sx={{ wordBreak: 'break-all' }}>{nfe.ide?.chNFe}</Typography>
+                    <Typography color="text.secondary" sx={{ wordBreak: 'break-all' }}>{nfe.protNFe?.infProt.chAcesso}</Typography>
                   </CardContent>
                 </Card>
               </Grid>

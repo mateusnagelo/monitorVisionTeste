@@ -279,14 +279,7 @@ export const parseNFe = (xmlDoc: XMLDocument): Nfe | null => {
         vNF: getNumber(ICMSTot, 'vNF'),
       },
     },
-    produtos: [],
-    number: null,
-    key: null,
-    emitter: null,
-    receiver: null,
-    emissionDate: null,
-    value: null,
-    products: null,
+    det: [],
   };
 };
 

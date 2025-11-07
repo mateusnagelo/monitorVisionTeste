@@ -1,6 +1,11 @@
 export interface Nfe {
   chave: string;
   versao: string;
+  protNFe?: {
+    infProt: {
+      chAcesso: string;
+    };
+  };
   ide: {
     cUF: string;
     cNF: string;
@@ -24,7 +29,8 @@ export interface Nfe {
     verProc: string;
   };
   emit: {
-    CNPJ: string;
+    CNPJ?: string;
+    CPF?: string;
     xNome: string;
     xFant: string;
     enderEmit: {
@@ -42,7 +48,7 @@ export interface Nfe {
     CRT: string;
   };
   dest: {
-    CNPJ: string;
+    CNPJ?: string;
     CPF?: string;
     xNome: string;
     enderDest: {
@@ -82,7 +88,7 @@ export interface Nfe {
       vNF: number;
     };
   };
-  produtos: {
+  det: {
     prod: {
       cProd: string;
       cEAN: string;
