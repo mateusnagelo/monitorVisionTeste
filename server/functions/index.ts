@@ -12,8 +12,8 @@ const port = 3001;
 // Configuração do Pool de Conexões com o Banco de Dados
 // O 'pg' irá automaticamente usar a variável de ambiente DATABASE_URL se ela estiver disponível.
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  connectionString: process.env.NETLIFY_DATABASE_URL,
+  ssl: process.env.NETLIFY_DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 app.use(cors());
