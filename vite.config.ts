@@ -31,7 +31,7 @@ export default defineConfig({
           });
           proxy.on('proxyRes', (proxyRes, req, _res) => {
             console.log('Received CNPJ Response from the Target:', proxyRes.statusCode, req.url);
-          });},
+          });
         },
       },
     },
