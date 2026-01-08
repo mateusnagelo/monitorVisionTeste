@@ -34,6 +34,8 @@ import BugReportIcon from '@mui/icons-material/BugReport'
 import TransformIcon from '@mui/icons-material/Transform';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import CloudDownload from '@mui/icons-material/CloudDownload';
+import Receipt from '@mui/icons-material/Receipt';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
@@ -83,8 +85,10 @@ export default function AppLayout({ mode, onToggleMode }: AppLayoutProps) {
       { to: '/', label: 'Dashboard', icon: <DashboardIcon /> },
       { to: '/ibptax', label: 'Tabela IBPTax', icon: <TableChart /> },
       { to: '/xml', label: 'Validação XML', icon: <CodeIcon /> },
-      { to: '/xml-converter', label: 'Conversor XML', icon: <TransformIcon /> },
       { to: '/xml-report', label: 'Relatório XMLs', icon: <AssessmentIcon /> },
+      { to: '/download-xml', label: 'Download XML', icon: <CloudDownload /> },
+      { to: '/minhas-nfs', label: 'Minhas NFs', icon: <Receipt /> },
+      { to: '/xml-to-pdf', label: 'XML para PDF', icon: <TransformIcon /> },
       { to: '/cnpj', label: 'Consulta CNPJ', icon: <Business /> },
       { to: '/cosmos', label: 'Consulta Cosmos', icon: <TableChart /> },
       { to: '/speed', label: 'Teste de Velocidade', icon: <AssessmentIcon /> },

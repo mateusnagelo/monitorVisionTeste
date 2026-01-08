@@ -10,8 +10,10 @@ import Logs from './pages/Logs'
 import CosmosLookup from './pages/CosmosLookup'
 import SpeedTest from './pages/SpeedTest'
 import PortCheck from './pages/PortCheck'
-import XMLConverter from './pages/XMLConverter'
 import XMLReport from './pages/XMLReport'
+import DownloadXML from './pages/DownloadXML'
+import MinhasNFs from './pages/MinhasNFs'
+import XMLtoPDF from './pages/XMLtoPDF'
 import LoginPage from './pages/Login'
 import { useMemo } from 'react'
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles'
@@ -90,13 +92,16 @@ export default function App() {
         <Route path="/cnpj" element={<CNPJLookup />} />
         <Route path="/speed" element={<SpeedTest />} />
         <Route path="/ports" element={<PortCheck />} />
-        <Route path="/xml-converter" element={<XMLConverter />} />
         <Route path="/xml-report" element={<XMLReport />} />
+        <Route path="/download-xml" element={<DownloadXML />} />
+        <Route path="/minhas-nfs" element={<MinhasNFs />} />
+        <Route path="/xml-to-pdf" element={<XMLtoPDF />} />
 
-        <Route path="/clientes" element={<Clients />} />
+        <Route path="/cosmos" element={<CosmosLookup />} />
         <Route path="/config" element={<Settings />} />
         <Route path="/logs" element={<Logs />} />
-        <Route path="/cosmos" element={<CosmosLookup />} />
+
+        <Route path="/clientes" element={<Clients />} />
       </Route>
     </Routes>
   )

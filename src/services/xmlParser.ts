@@ -196,9 +196,69 @@ export const parseNFe = (xmlDoc: XMLDocument): Nfe | null => {
   const protNFe = getElement(nfe, 'protNFe');
   const infProt = getElement(protNFe, 'infProt');
 
+  const parseGroup = (parent: Element | null, groupName: string) => {
+    const group = getElement(parent, groupName);
+    if (!group) return null;
+    const child = Array.from(group.children).find((c) => c.nodeType === 1) as Element | undefined;
+    const src = child ?? group;
+    const obj: any = {};
+    for (const el of Array.from(src.children)) {
+      const key = el.tagName;
+      obj[key] = el.textContent ?? '';
+    }
+    return obj;
+  };
+
+  const parseDet = () => {
+    const detNodes = Array.from(infNFe.getElementsByTagName('det'));
+    return detNodes.map((detNode) => {
+      const prod = getElement(detNode, 'prod');
+      const imposto = getElement(detNode, 'imposto');
+      const icms = parseGroup(imposto, 'ICMS');
+      const pis = parseGroup(imposto, 'PIS');
+      const cofins = parseGroup(imposto, 'COFINS');
+
+      return {
+        prod: {
+          cProd: getValue(prod, 'cProd') || '',
+          cEAN: getValue(prod, 'cEAN') || '',
+          xProd: getValue(prod, 'xProd') || '',
+          NCM: getValue(prod, 'NCM') || '',
+          CFOP: getValue(prod, 'CFOP') || '',
+          uCom: getValue(prod, 'uCom') || '',
+          qCom: getNumber(prod, 'qCom'),
+          vUnCom: getNumber(prod, 'vUnCom'),
+          vProd: getNumber(prod, 'vProd'),
+          cEANTrib: getValue(prod, 'cEANTrib') || '',
+          uTrib: getValue(prod, 'uTrib') || '',
+          qTrib: getNumber(prod, 'qTrib'),
+          vUnTrib: getNumber(prod, 'vUnTrib'),
+          indTot: getValue(prod, 'indTot') || '',
+        },
+        imposto: {
+          ...(icms ? { ICMS: icms } : {}),
+          ...(pis ? { PIS: pis } : {}),
+          ...(cofins ? { COFINS: cofins } : {}),
+        },
+      };
+    });
+  };
+
+  const chaveFromId = infNFe.getAttribute('Id')?.replace(/^NFe/, '') || '';
+  const chave = (getValue(infProt, 'chNFe') || chaveFromId || '').trim();
+
   return {
-    chave: getValue(infProt, 'chNFe') || '',
+    chave,
     versao: nfe.getAttribute('versao') || '',
+    ...(infProt
+      ? {
+          protNFe: {
+            infProt: {
+              chNFe: getValue(infProt, 'chNFe') || chave,
+            },
+          },
+        }
+      : {}),
     ide: {
       cUF: getValue(ide, 'cUF') || '',
       cNF: getValue(ide, 'cNF') || '',
@@ -279,7 +339,7 @@ export const parseNFe = (xmlDoc: XMLDocument): Nfe | null => {
         vNF: getNumber(ICMSTot, 'vNF'),
       },
     },
-    det: [],
+    det: parseDet(),
   };
 };
 

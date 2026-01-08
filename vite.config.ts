@@ -1,62 +1,39 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from "path"
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
+  plugins: [react(), tsconfigPaths()],
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8888',
+        target: 'https://api.meudanfe.com.br',
         changeOrigin: true,
-      },
-      '/ibpt-csv': {
-        target: 'https://www.concity.com.br',
-        changeOrigin: true,
-        secure: true,
-        rewrite: () => '/arquivos/b1b38f9f32e01ab6a20e81ffea020c54.csv',
-      },
-      '/cnpj': {
-        target: 'http://localhost:8888',
-        changeOrigin: true,
-        secure: true,
-        // sem rewrite necessário: /cnpj/XXXXXXXXXXXXXX -> http://localhost:8888/cnpj/XXXXXXXXXXXXXX
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            console.log(`[proxy:/cnpj] → ${req.url}`)
-          })
-          proxy.on('proxyRes', (proxyRes, req) => {
-            console.log(`[proxy:/cnpj] ← ${proxyRes.statusCode} ${req.url}`)
-          })
-          proxy.on('error', (err, req) => {
-            console.error(`[proxy:/cnpj] ✖ erro: ${err.message} ${req.url}`)
-          })
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('Sending Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          });
         },
       },
-      '/api/cosmos': {
-        target: 'https://api.cosmos.bluesoft.com.br',
+      '/cnpj': {
+        target: 'https://publica.cnpj.ws',
         changeOrigin: true,
-        secure: true,
-        // Importante: remover o prefixo /api/cosmos para que o backend receba /gtins, /ncms, etc.
-        rewrite: (path) => path.replace(/^\/api\/cosmos/, ''),
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            console.log(`[proxy:/api/cosmos] → ${req.url}`)
-          })
-          proxy.on('proxyRes', (proxyRes, req) => {
-            console.log(`[proxy:/api/cosmos] ← ${proxyRes.statusCode} ${req.url}`)
-          })
-          proxy.on('error', (err, req) => {
-            console.error(`[proxy:/api/cosmos] ✖ erro: ${err.message} ${req.url}`)
-          })
+        secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('Sending CNPJ Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('Received CNPJ Response from the Target:', proxyRes.statusCode, req.url);
+          });},
         },
       },
     },
   },
-})
+});

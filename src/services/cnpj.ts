@@ -4,7 +4,7 @@ export type CNPJData = any // Estrutura completa será definida após integraç�
 
 export async function fetchCNPJ(baseUrl: string, cnpj: string) {
   const base = import.meta.env.DEV ? '/cnpj' : baseUrl
-  const url = `${base.replace(/\/$/, '')}/${cnpj}`
+  const url = `${base}/${cnpj}`
   try {
     const res = await axios.get(url, { timeout: 15000 })
     return res.data as CNPJData
