@@ -15,9 +15,6 @@ import { convertXMLtoPDF } from '../services/conversion';
 import { UploadFile, CheckCircle, Error as ErrorIcon } from '@mui/icons-material';
 import { Buffer } from 'buffer';
 
-// Garante que o Buffer esteja disponível globalmente para o componente
-window.Buffer = window.Buffer || Buffer;
-
 interface FileStatus {
   status: 'pending' | 'converting' | 'success' | 'error';
   message: string;
