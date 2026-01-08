@@ -11,8 +11,15 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/index/:splat"
+  to = "https://api.meudanfe.com.br/:splat"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/cnpj/*"
+  to = "https://publica.cnpj.ws/cnpj/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
